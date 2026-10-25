@@ -1,0 +1,71 @@
+{
+  "info": {
+    "name": "Movie Booking API",
+    "_postman_id": "9f4c5a4d-7e9b-4d88-a0e2-movie-booking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3069/api" },
+    { "key": "accessToken", "value": "" },
+    { "key": "movieId", "value": "1" },
+    { "key": "showtimeId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"taiKhoan\":\"user01\",\"matKhau\":\"123456\",\"email\":\"user01@gmail.com\",\"soDt\":\"0900000000\",\"hoTen\":\"Nguyen Van A\"}" },
+            "url": "{{baseUrl}}/QuanLyNguoiDung/DangKy"
+          }
+        },
+        {
+          "name": "Login admin",
+          "event": [{ "listen": "test", "script": { "exec": ["const json = pm.response.json();", "pm.collectionVariables.set('accessToken', json.accessToken || json.data?.accessToken);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"taiKhoan\":\"admin\",\"matKhau\":\"123456\"}" },
+            "url": "{{baseUrl}}/QuanLyNguoiDung/DangNhap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Movies",
+      "item": [
+        { "name": "List movies", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyPhim/LayDanhSachPhim?maNhom=GP01" } },
+        { "name": "Movie detail", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyPhim/LayThongTinPhim?maPhim={{movieId}}" } },
+        { "name": "Banners", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyPhim/LayDanhSachBanner" } },
+        { "name": "Paginated movies", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyPhim/LayDanhSachPhimPhanTrang?MaNhom=GP01&soTrang=1&soPhanTuTrenTrang=10" } }
+      ]
+    },
+    {
+      "name": "Cinemas",
+      "item": [
+        { "name": "Cinema systems", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyRap/LayThongTinHeThongRap" } },
+        { "name": "Cinemas by system", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyRap/LayThongTinCumRapTheoHeThong?maHeThongRap=CGV" } },
+        { "name": "Showtimes by movie", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyRap/LayThongTinLichChieuPhim?MaPhim={{movieId}}" } }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        { "name": "Seats", "request": { "method": "GET", "url": "{{baseUrl}}/QuanLyDatVe/LayDanhSachPhongVe?MaLichChieu={{showtimeId}}" } },
+        {
+          "name": "Book seats",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"maLichChieu\":{{showtimeId}},\"danhSachVe\":[{\"maGhe\":1},{\"maGhe\":2}]}" },
+            "url": "{{baseUrl}}/QuanLyDatVe/DatVe"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  account      String        @unique @db.VarChar(50)
+  passwordHash String        @db.VarChar(255)
+  email        String        @unique @db.VarChar(255)
+  fullName     String        @db.VarChar(100)
+  phone        String?       @db.VarChar(20)
+  groupCode    String        @default("GP01") @db.VarChar(20)
+  role         UserRole      @default(USER)
+  bookings     Booking[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Movie {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(255)
+  trailer     String?    @db.VarChar(500)
+  description String?    @db.Text
+  image       String?    @db.VarChar(500)
+  releaseDate DateTime?
+  rating      Int        @default(5)
+  groupCode   String     @default("GP01") @db.VarChar(20)
+  isHot       Boolean    @default(false)
+  isShowing   Boolean    @default(false)
+  isUpcoming  Boolean    @default(false)
+  banners     Banner[]
+  showtimes   Showtime[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Banner {
+  id      Int    @id @default(autoincrement())
+  movieId Int
+  image   String @db.VarChar(500)
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+}
+
+model CinemaSystem {
+  id      Int      @id @default(autoincrement())
+  code    String   @unique @db.VarChar(30)
+  name    String   @db.VarChar(100)
+  logo    String?  @db.VarChar(500)
+  cinemas Cinema[]
+}
+
+model Cinema {
+  id        Int           @id @default(autoincrement())
+  code      String        @unique @db.VarChar(30)
+  name      String        @db.VarChar(150)
+  address   String        @db.VarChar(255)
+  systemId  Int
+  system    CinemaSystem  @relation(fields: [systemId], references: [id], onDelete: Cascade)
+  rooms     Room[]
+}
+
+model Room {
+  id       Int      @id @default(autoincrement())
+  code     String   @unique @db.VarChar(30)
+  name     String   @db.VarChar(100)
+  cinemaId Int
+  cinema   Cinema   @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+  seats    Seat[]
+  showtimes Showtime[]
+}
+
+model Seat {
+  id       Int      @id @default(autoincrement())
+  code     String   @db.VarChar(10)
+  name     String   @db.VarChar(20)
+  type     String   @default("Thuong") @db.VarChar(30)
+  roomId   Int
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  bookings BookingSeat[]
+  @@unique([roomId, code])
+}
+
+model Showtime {
+  id          Int       @id @default(autoincrement())
+  movieId     Int
+  roomId      Int
+  startAt     DateTime
+  ticketPrice Int
+  movie       Movie     @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+  bookingSeats BookingSeat[]
+}
+
+model Booking {
+  id         Int           @id @default(autoincrement())
+  userId     Int
+  showtimeId Int
+  totalPrice Int
+  status     String        @default("CONFIRMED") @db.VarChar(30)
+  user       User          @relation(fields: [userId], references: [id])
+  showtime   Showtime      @relation(fields: [showtimeId], references: [id])
+  seats      BookingSeat[]
+  createdAt  DateTime      @default(now())
+}
+
+model BookingSeat {
+  id        Int     @id @default(autoincrement())
+  bookingId Int
+  seatId    Int
+  showtimeId Int
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seat      Seat    @relation(fields: [seatId], references: [id])
+  showtime  Showtime @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  @@unique([showtimeId, seatId])
+}

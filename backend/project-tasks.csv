@@ -1,0 +1,15 @@
+Task,Owner,Status,Deliverable,Acceptance criteria
+Phân tích database,Nguyễn Hữu Linh,Done,prisma/schema.prisma,Đủ User Movie Cinema Showtime Booking và quan hệ
+Thiết lập Docker MySQL,Nguyễn Hữu Linh,Done,docker-compose.yml,MySQL chạy ở port 3307
+Authentication JWT,Nguyễn Hữu Linh,Done,modules-api/auth,Đăng ký đăng nhập trả accessToken
+Phân quyền ADMIN,Nguyễn Hữu Linh,Done,common/guard/role.guard.ts,User thường nhận 403 khi gọi API quản trị
+API người dùng,Nguyễn Hữu Linh,In Progress,modules-api/users,CRUD và phân trang hoạt động
+API phim và upload,Trương Tuấn Tú,In Progress,modules-api/movies,CRUD phim và upload JPG PNG WEBP
+API rạp và lịch chiếu,Trương Tuấn Tú,In Progress,modules-api/cinemas,Trả đúng hệ thống rạp và lịch chiếu
+API đặt vé,Trương Tuấn Tú,In Progress,modules-api/bookings,Không thể đặt trùng ghế
+Swagger chi tiết,Nguyễn Hữu Linh,In Progress,src/main.ts và controllers,Đủ query body auth và ví dụ
+Postman Collection,Nguyễn Hữu Linh,Todo,postman/Movie-Booking-API.postman_collection.json,Có Auth Movies Cinemas Bookings
+Kết nối frontend,Trương Tuấn Tú,Todo,frontend/src/api/axiosInstance.js,Frontend gọi localhost backend bằng JWT
+Kiểm thử tích hợp,Nguyễn Hữu Linh,Todo,Postman report,Test happy path và lỗi 401 403 409
+Deploy backend,Trương Tuấn Tú,Todo,Dockerfile,Backend chạy production bằng environment variables
+Quay video demo,Cả nhóm,Todo,YouTube link,Demo API database frontend và phân quyền
