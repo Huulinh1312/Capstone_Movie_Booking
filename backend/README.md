@@ -1,83 +1,412 @@
-# Movie Booking Backend (NestJS + TypeScript)
+# Movie Booking Backend
 
-Backend độc lập cho đồ án Movie, viết theo cấu trúc `nodejs_56/nestjs/gateway`, không sửa thư mục `nodejs_56`.
+Backend cho dự án đặt vé xem phim cuối khóa, xây dựng bằng NestJS,
+TypeScript, Prisma và MySQL/TiDB Cloud.
 
-## Chạy lần đầu
+Thư mục `nodejs_56` là code mẫu tham khảo và không thuộc backend này.
+
+## Công nghệ
+
+- NestJS 11
+- TypeScript
+- Prisma 6
+- MySQL compatible database
+- TiDB Cloud cho production
+- JWT và bcrypt
+- Swagger
+- Multer upload hình ảnh
+- Docker
+
+## Môi trường production
+
+Backend production:
+
+- API: <https://capstone-movie-booking.onrender.com/api>
+- Swagger: <https://capstone-movie-booking.onrender.com/api/docs>
+- Health check: <https://capstone-movie-booking.onrender.com/health>
+
+Swagger là tài liệu chính để xem endpoint, query, body và response hiện tại.
+
+## Cài đặt local
+
+### Yêu cầu
+
+- Node.js 20 trở lên.
+- npm 10 trở lên.
+- MySQL local hoặc Docker Desktop.
+- Git và PowerShell.
+
+### Cách 1: Dùng Docker MySQL
+
+Từ thư mục gốc dự án:
 
 ```powershell
 cd backend
 Copy-Item .env.example .env
 npm install
 docker compose up -d mysql
+npm run prisma:generate
 npm run db:push
-npx prisma generate
 npm run db:seed
 npm run start:dev
 ```
 
-- API: `http://localhost:3069/api`
-- Swagger: `http://localhost:3069/api/docs`
-- Health check: `http://localhost:3069/health`
-- Tài khoản seed: `admin` / `123456`
+Backend local:
 
-`db:push` được dùng cho môi trường Docker học tập hiện tại vì tài khoản
-`movie_user` không có quyền tạo shadow database của Prisma Migrate. Khi triển
-khai production, có thể cấp quyền tạo database cho user migration rồi dùng
-`npm run prisma:migrate`.
+```text
+http://localhost:3069/api
+```
 
-## TablePlus
+Swagger local:
 
-Tạo kết nối MySQL với host `127.0.0.1`, port `3307`, database `movie_booking`, user `movie_user`, password `movie_password`.
+```text
+http://localhost:3069/api/docs
+```
+
+Health check local:
+
+```text
+http://localhost:3069/health
+```
+
+### Cách 2: Dùng MySQL đã cài trên máy
+
+Tạo database `movie_booking`, sau đó cấu hình `DATABASE_URL` trong file
+`.env` theo thông tin MySQL của máy. Ví dụ an toàn, không dùng mật khẩu thật:
+
+```env
+PORT=3069
+DATABASE_URL="mysql://movie_user:movie_password@localhost:3307/movie_booking"
+JWT_SECRET="replace-with-a-long-random-secret"
+CLIENT_URL="http://localhost:5173"
+```
+
+Sau đó chạy:
+
+```powershell
+npm install
+npm run prisma:generate
+npm run db:push
+npm run db:seed
+npm run start:dev
+```
+
+Không sử dụng database hệ thống như `sys` cho Prisma. Hãy dùng database riêng
+như `movie_booking`.
+
+## Biến môi trường
+
+Các biến bắt buộc:
+
+```env
+PORT=3069
+DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
+JWT_SECRET="replace-with-a-long-random-secret"
+CLIENT_URL="http://localhost:5173"
+```
+
+Production dùng connection string TiDB Cloud có SSL. Ví dụ dạng tổng quát:
+
+```env
+DATABASE_URL="mysql://USER:PASSWORD@HOST:4000/movie_booking?sslaccept=strict"
+```
+
+Không commit các file `.env`, không đưa password database hoặc JWT secret lên
+GitHub, ảnh chụp màn hình, Postman public workspace hay README.
+
+## Prisma và database
+
+Sinh Prisma Client:
+
+```powershell
+npm run prisma:generate
+```
+
+Đồng bộ schema với database:
+
+```powershell
+npm run db:push
+```
+
+Seed dữ liệu mẫu:
+
+```powershell
+npm run db:seed
+```
+
+Tài khoản seed:
+
+```text
+Tài khoản: admin
+Mật khẩu: 123456
+Quyền: QuanTri
+```
+
+Lệnh `db:push` phù hợp cho môi trường học tập và database mới. Trước khi
+thay đổi database production, cần backup và kiểm tra schema.
+
+## Kết nối bằng TablePlus
+
+Với Docker local, dùng thông tin:
+
+```text
+Host:     127.0.0.1
+Port:     3307
+Database: movie_booking
+User:     movie_user
+Password: movie_password
+```
+
+Thông tin trên chỉ là cấu hình local mẫu. Không dùng nó để kết nối TiDB
+production.
+
+## API chính
+
+### Authentication
+
+```text
+POST /api/QuanLyNguoiDung/DangKy
+POST /api/QuanLyNguoiDung/DangNhap
+GET  /api/QuanLyNguoiDung/LayDanhSachLoaiNguoiDung
+```
+
+### Phim
+
+```text
+GET    /api/QuanLyPhim/LayDanhSachPhim
+GET    /api/QuanLyPhim/LayThongTinPhim
+GET    /api/QuanLyPhim/LayDanhSachBanner
+GET    /api/QuanLyPhim/LayDanhSachPhimPhanTrang
+GET    /api/QuanLyPhim/LayDanhSachPhimTheoNgay
+POST   /api/QuanLyPhim/ThemPhimUploadHinh
+POST   /api/QuanLyPhim/QuanLyPhim
+POST   /api/QuanLyPhim/CapNhatPhimUpload
+DELETE /api/QuanLyPhim/XoaPhim
+DELETE /api/QuanLyPhim/XP
+```
+
+### Rạp và lịch chiếu
+
+```text
+GET /api/QuanLyRap/LayThongTinHeThongRap
+GET /api/QuanLyRap/LayThongTinCumRapTheoHeThong
+GET /api/QuanLyRap/LayThongTinLichChieuHeThongRap
+GET /api/QuanLyRap/LayThongTinLichChieuPhim
+```
+
+### Đặt vé
+
+```text
+GET  /api/QuanLyDatVe/LayDanhSachPhongVe
+POST /api/QuanLyDatVe/DatVe
+POST /api/QuanLyDatVe/TaoLichChieu
+```
+
+Payload đặt vé:
+
+```json
+{
+  "maLichChieu": 1,
+  "danhSachVe": [
+    {
+      "maGhe": 1,
+      "giaVe": 90000
+    }
+  ]
+}
+```
+
+### Người dùng và quản trị
+
+```text
+GET    /api/QuanLyNguoiDung/LayDanhSachNguoiDung
+GET    /api/QuanLyNguoiDung/LayDanhSachNguoiDungPhanTrang
+GET    /api/QuanLyNguoiDung/TimKiemNguoiDung
+GET    /api/QuanLyNguoiDung/TimKiemNguoiDungPhanTrang
+POST   /api/QuanLyNguoiDung/ThongTinTaiKhoan
+POST   /api/QuanLyNguoiDung/LayThongTinNguoiDung
+POST   /api/QuanLyNguoiDung/ThemNguoiDung
+PUT    /api/QuanLyNguoiDung/CapNhatThongTinNguoiDung
+POST   /api/QuanLyNguoiDung/CapNhatThongTinNguoiDung
+DELETE /api/QuanLyNguoiDung/XoaNguoiDung
+```
+
+Các endpoint quản trị yêu cầu:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+## Response quan trọng
+
+Đăng nhập trả trực tiếp access token:
+
+```json
+{
+  "taiKhoan": "admin",
+  "email": "admin@example.com",
+  "hoTen": "Administrator",
+  "maLoaiNguoiDung": "QuanTri",
+  "accessToken": "..."
+}
+```
+
+Danh sách ghế:
+
+```json
+{
+  "thongTinPhim": {},
+  "danhSachGhe": [
+    {
+      "id": 1,
+      "code": "A1",
+      "name": "A1",
+      "type": "Thuong",
+      "roomId": 1,
+      "daDat": false
+    }
+  ]
+}
+```
 
 ## Postman
 
-Gọi `POST /api/QuanLyNguoiDung/DangKy`, sau đó `POST /api/QuanLyNguoiDung/DangNhap`. Lưu `data.accessToken` vào biến `accessToken` và dùng header `Authorization: Bearer {{accessToken}}`.
+Collection nằm tại:
 
-Các API đọc phim/rạp không cần đăng nhập. API thêm, sửa, xóa phim và tạo lịch chiếu cần tài khoản admin. API `DatVe` cần tài khoản người dùng.
+```text
+backend/postman/Movie-Booking-API.postman_collection.json
+```
 
-## Kết nối frontend
+Khi chạy local, biến `baseUrl` dùng:
 
-Đặt biến môi trường frontend `VITE_API_URL=http://localhost:3069/api` và cấu hình `axiosInstance` dùng giá trị này. Khi deploy, đổi URL thành domain backend đã deploy và thêm domain frontend vào `CLIENT_URL`.
+```text
+http://localhost:3069/api
+```
+
+Khi kiểm thử production, đổi thành:
+
+```text
+https://capstone-movie-booking.onrender.com/api
+```
+
+Quy trình kiểm thử:
+
+1. Đăng ký tài khoản.
+2. Đăng nhập và lấy `accessToken`.
+3. Gửi token qua Bearer Auth.
+4. Gọi API danh sách phim và lịch chiếu.
+5. Gọi API lấy danh sách phòng vé.
+6. Đặt một ghế chưa được đặt.
+7. Thử đặt lại cùng ghế để kiểm tra lỗi xung đột.
+8. Dùng tài khoản admin để kiểm tra API quản trị.
 
 ## Cấu trúc source
 
 ```text
-src/
-├── common/
-│   ├── decorators/
-│   └── guard/
-├── modules-api/
-│   ├── auth/
-│   ├── bookings/
-│   └── movies/
-├── modules-system/
-│   └── prisma/
-├── app.module.ts
-└── main.ts
+backend/
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.cjs
+├── src/
+│   ├── common/
+│   │   ├── decorators/
+│   │   └── guard/
+│   ├── modules-api/
+│   │   ├── auth/
+│   │   ├── bookings/
+│   │   ├── cinemas/
+│   │   ├── movies/
+│   │   └── users/
+│   ├── modules-system/
+│   │   └── prisma/
+│   ├── app.module.ts
+│   └── main.ts
+├── postman/
+├── Dockerfile
+├── docker-compose.yml
+└── package.json
 ```
 
-Các module mới nên tuân theo mẫu `module -> controller -> service -> dto` giống thư mục mẫu NestJS.
+Mỗi module API nên giữ cấu trúc:
 
-## Tài liệu nộp dự án
+```text
+module/
+├── controller
+├── service
+├── dto
+└── module
+```
 
-- Postman Collection: `postman/Movie-Booking-API.postman_collection.json`
-- Bảng phân công có thể mở trực tiếp bằng Excel: `project-tasks.csv`
-- Docker production: `Dockerfile`
+## Build và chạy production
 
-Các task hiện được chia cho Nguyễn Hữu Linh và Trương Tuấn Tú trong file CSV.
+Build TypeScript:
 
-## Production
+```powershell
+npm run build
+```
 
-Build image:
+Chạy bản đã build:
+
+```powershell
+npm run start:prod
+```
+
+Build Docker image:
 
 ```powershell
 docker build -t movie-booking-api .
 ```
 
-Run bằng biến môi trường production:
+Chạy container bằng file biến môi trường local hoặc production:
 
 ```powershell
 docker run --name movie-booking-api -d -p 3069:3069 --env-file .env movie-booking-api
 ```
 
-Production cần MySQL cloud; không dùng thông tin database local trong `.env.example`.
+Không đưa `.env` vào image hoặc repository.
+
+## Deploy backend lên Render
+
+1. Tạo Web Service từ repository GitHub.
+2. Chọn Docker làm runtime.
+3. Đặt Root Directory là:
+
+```text
+backend
+```
+
+4. Chọn branch cần deploy, thường là `main`.
+5. Thêm các biến môi trường:
+
+```text
+PORT=3069
+DATABASE_URL=<connection-string-TiDB-co-ssl>
+JWT_SECRET=<secret-ngau-nhien>
+CLIENT_URL=<domain-Vercel-cua-frontend>
+```
+
+6. Deploy và mở health check.
+7. Mở Swagger để kiểm tra endpoint.
+
+TiDB Cloud yêu cầu SSL và database không được là database hệ thống `sys`.
+Hãy dùng database riêng, ví dụ `movie_booking`.
+
+## Tài liệu nộp dự án
+
+- Source code GitHub.
+- Swagger backend.
+- Postman collection.
+- `project-tasks.csv` để mở bằng Excel.
+- Dockerfile và docker-compose cho môi trường local.
+- Link frontend Vercel.
+- Link backend Render.
+- Video demo các chức năng.
+
+## Lưu ý bảo mật
+
+- Không commit `.env`.
+- Không commit password TiDB, JWT secret hoặc access token.
+- Nếu password đã bị lộ, phải tạo password mới.
+- Không sử dụng database `sys` cho Prisma.
+- Chỉ cho phép frontend production trong `CLIENT_URL` khi deploy.
+- Không tắt xác thực JWT để sửa lỗi tạm thời trên production.
