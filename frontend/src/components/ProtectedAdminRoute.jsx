@@ -1,23 +1,8 @@
-import { useSelector } from "react-redux";
-import { selectorIsLoggedIn, selectorUser } from "../store/authSlice";
 import { Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectorUser } from "../store/authSlice";
 
-const ProtectedAdminRoute = ({ children }) => {
-  // isLoggedIn: kiểm tra xem người dùng đã đăng nhập chưa
-  // user: kiểm tra role của người dùng (admin hay user)
-  const isLoggedIn = useSelector(selectorIsLoggedIn);
+export default function ProtectedAdminRoute({ children }) {
   const user = useSelector(selectorUser);
-
-  // nếu chưa đăng nhập, chuyển hướng về trang login
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // nếu không phải là quản trị viên, chuyển hướng về trang home
-  if (user?.maLoaiNguoiDung !== "QuanTri") {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
-export default ProtectedAdminRoute;
+  return user?.maLoaiNguoiDung === "QuanTri" || user?.role === "ADMIN" ? children : <Navigate to="/" replace />;
+}

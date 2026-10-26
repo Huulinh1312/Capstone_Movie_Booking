@@ -1,10 +1,17 @@
-import axiosInstance from "./axiosInstance"
+import axiosInstance from "./axiosInstance";
 
 export const cinemaApi = {
-    getHeThongRap: () => {
-        return axiosInstance.get('/QuanLyRap/LayThongTinHeThongRap')
-    },
-    getCumRapTheoHeThong: (maHeThongRap) => {
-        return axiosInstance.get(`/QuanLyRap/LayThongTinCumRapTheoHeThong?maHeThongRap=${maHeThongRap}`)
-    }
-}
+  getHeThongRap: () => axiosInstance.get("/QuanLyRap/LayThongTinHeThongRap"),
+  getCumRapTheoHeThong: (code) =>
+    axiosInstance.get("/QuanLyRap/LayThongTinCumRapTheoHeThong", {
+      params: { maHeThongRap: code },
+    }),
+  getLichChieuHeThongRap: (code, groupCode = "GP01") =>
+    axiosInstance.get("/QuanLyRap/LayThongTinLichChieuHeThongRap", {
+      params: { maHeThongRap: code, maNhom: groupCode },
+    }),
+  getLichChieuPhim: (movieId) =>
+    axiosInstance.get("/QuanLyRap/LayThongTinLichChieuPhim", {
+      params: { MaPhim: movieId },
+    }),
+};

@@ -1,18 +1,7 @@
+import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectorIsLoggedIn } from "../store/authSlice";
-import { Navigate } from "react-router-dom";
 
-const ProtectedRoute = ({ children }) => {
-  // lấy state isLoggedIn từ redux store về
-  const isLoggedIn = useSelector(selectorIsLoggedIn);
-
-  if (!isLoggedIn) {
-    // nếu chưa đăng nhập, chuyển hướng về trang login
-    // replace: true để khi chuyển hướng, trang login sẽ thay thế trang hiện tại trong lịch sử trình duyệt
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-};
-
-export default ProtectedRoute;
+export default function ProtectedRoute({ children }) {
+  return useSelector(selectorIsLoggedIn) ? children : <Navigate to="/login" replace />;
+}

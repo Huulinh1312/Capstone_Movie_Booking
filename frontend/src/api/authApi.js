@@ -1,21 +1,7 @@
-import axiosInstance from "./axiosInstance"
+import axiosInstance from "./axiosInstance";
 
 export const authApi = {
-    // data: { taiKhoan: "string", matKhau: "string" }
-    login: (data) => {
-        return axiosInstance.post("/QuanLyNguoiDung/DangNhap", data, {
-            headers: {
-                "Content-Type": "application/json-patch+json"
-            }
-        })
-    },
-
-    // data: { taiKhoan, matKhau, email, soDt, maNhom, hoTen }
-    register: (data) => {
-        return axiosInstance.post("/QuanLyNguoiDung/DangKy", data, {
-            headers: {
-                "Content-Type": "application/json-patch+json"
-            }
-        })
-    }
-}
+  login: (data) => axiosInstance.post("/QuanLyNguoiDung/DangNhap", data),
+  register: (data) => axiosInstance.post("/QuanLyNguoiDung/DangKy", data),
+  getRoles: () => axiosInstance.get("/QuanLyNguoiDung/LayDanhSachLoaiNguoiDung"),
+};

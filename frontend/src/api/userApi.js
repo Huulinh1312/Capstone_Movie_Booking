@@ -1,20 +1,28 @@
-import axiosInstance from "./axiosInstance"
+import axiosInstance from "./axiosInstance";
 
 export const userApi = {
-    getUserListPhanTrang: (maNhom = 'GP01', soTrang = 1, soPhanTuTrenTrang = 10) => {
-        return axiosInstance.get(`/QuanLyNguoiDung/LayDanhSachNguoiDungPhanTrang?MaNhom=${maNhom}&soTrang=${soTrang}&soPhanTuTrenTrang=${soPhanTuTrenTrang}`)
-    },
-    getProfile: () => {
-        return axiosInstance.post('/QuanLyNguoiDung/ThongTinTaiKhoan')
-    },
-    addUser: (userData) => {
-        console.log("userData:", userData);
-        return axiosInstance.post('/QuanLyNguoiDung/ThemNguoiDung', userData)
-    },
-    updateUser: (userData) => {
-        return axiosInstance.post('/QuanLyNguoiDung/CapNhatThongTinNguoiDung', userData)
-    },
-    deleteUser: (taiKhoan) => {
-        return axiosInstance.delete(`/QuanLyNguoiDung/XoaNguoiDung?TaiKhoan=${taiKhoan}`)
-    },
-}
+  getProfile: () => axiosInstance.post("/QuanLyNguoiDung/ThongTinTaiKhoan"),
+  getList: (groupCode = "GP01") =>
+    axiosInstance.get("/QuanLyNguoiDung/LayDanhSachNguoiDung", {
+      params: { MaNhom: groupCode },
+    }),
+  getListPaginated: (groupCode = "GP01", page = 1, size = 10) =>
+    axiosInstance.get("/QuanLyNguoiDung/LayDanhSachNguoiDungPhanTrang", {
+      params: { MaNhom: groupCode, soTrang: page, soPhanTuTrenTrang: size },
+    }),
+  search: (keyword = "") =>
+    axiosInstance.get("/QuanLyNguoiDung/TimKiemNguoiDung", {
+      params: { tuKhoa: keyword },
+    }),
+  getByAccount: (account) =>
+    axiosInstance.post("/QuanLyNguoiDung/LayThongTinNguoiDung", null, {
+      params: { taiKhoan: account },
+    }),
+  add: (payload) => axiosInstance.post("/QuanLyNguoiDung/ThemNguoiDung", payload),
+  update: (payload) =>
+    axiosInstance.put("/QuanLyNguoiDung/CapNhatThongTinNguoiDung", payload),
+  remove: (account) =>
+    axiosInstance.delete("/QuanLyNguoiDung/XoaNguoiDung", {
+      params: { TaiKhoan: account },
+    }),
+};
