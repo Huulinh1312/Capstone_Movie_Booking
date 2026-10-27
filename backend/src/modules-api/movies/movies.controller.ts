@@ -1,24 +1,14 @@
 import { Body, Controller, Delete, Get, ParseIntPipe, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
+import { memoryStorage } from 'multer';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { MoviesService } from './movies.service';
 import { Role } from '../../common/decorators/role.decorator';
 import { CreateMovieDto } from './dto/create-movie.dto';
 
-const uploadDirectory = join(process.cwd(), 'uploads');
-if (!existsSync(uploadDirectory)) mkdirSync(uploadDirectory, { recursive: true });
 const movieImageUpload = {
-  storage: diskStorage({
-    destination: uploadDirectory,
-    filename: (_request: Express.Request, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
-      const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname).toLowerCase()}`;
-      callback(null, filename);
-    },
-  }),
+  storage: memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_request: Express.Request, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
@@ -28,6 +18,10 @@ const movieImageUpload = {
     callback(null, true);
   },
 };
+
+function imageDataUrl(file?: Express.Multer.File) {
+  return file ? `data:${file.mimetype};base64,${file.buffer.toString('base64')}` : undefined;
+}
 
 @Controller('QuanLyPhim')
 @ApiTags('QuanLyPhim')
@@ -86,7 +80,7 @@ export class MoviesController {
   @ApiBody({ schema: { type: 'object', required: ['file', 'tenPhim', 'maNhom'], properties: { file: { type: 'string', format: 'binary' }, tenPhim: { type: 'string', example: 'Avengers' }, maNhom: { type: 'string', example: 'GP01' }, trailer: { type: 'string', example: 'https://youtube.com/watch?v=demo' }, moTa: { type: 'string', example: 'Mô tả phim' }, ngayKhoiChieu: { type: 'string', example: '2026-10-24' }, danhGia: { type: 'integer', example: 5 } } } })
   @UseInterceptors(FileInterceptor('file', movieImageUpload))
   create(@Body() body: CreateMovieDto, @UploadedFile() file?: Express.Multer.File) {
-    return this.moviesService.create({ name: body.tenPhim, groupCode: body.maNhom, trailer: body.trailer, description: body.moTa, image: file ? `/uploads/${file.filename}` : body.hinhAnh, rating: Number(body.danhGia || 5), releaseDate: body.ngayKhoiChieu ? new Date(body.ngayKhoiChieu) : undefined });
+    return this.moviesService.create({ name: body.tenPhim, groupCode: body.maNhom, trailer: body.trailer, description: body.moTa, image: imageDataUrl(file) || body.hinhAnh, rating: body.danhGia === undefined ? 5 : Number(body.danhGia), releaseDate: body.ngayKhoiChieu ? new Date(body.ngayKhoiChieu) : undefined });
   }
 
   @Post('QuanLyPhim')
@@ -104,8 +98,10 @@ export class MoviesController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ schema: { type: 'object', required: ['maPhim', 'tenPhim'], properties: { file: { type: 'string', format: 'binary' }, maPhim: { type: 'integer', example: 1 }, tenPhim: { type: 'string', example: 'Avengers Updated' }, maNhom: { type: 'string', example: 'GP01' }, trailer: { type: 'string' }, moTa: { type: 'string' }, danhGia: { type: 'integer', example: 5 } } } })
   @UseInterceptors(FileInterceptor('file', movieImageUpload))
-  update(@Body() body: CreateMovieDto & { maPhim: number }, @UploadedFile() file?: Express.Multer.File) {
-    return this.moviesService.update(Number(body.maPhim), { name: body.tenPhim, groupCode: body.maNhom, trailer: body.trailer, description: body.moTa, image: file ? `/uploads/${file.filename}` : body.hinhAnh, rating: Number(body.danhGia || 5) });
+  async update(@Body() body: CreateMovieDto & { maPhim: number }, @UploadedFile() file?: Express.Multer.File) {
+    const data = { name: body.tenPhim, groupCode: body.maNhom, trailer: body.trailer, description: body.moTa, rating: body.danhGia === undefined ? undefined : Number(body.danhGia), image: imageDataUrl(file) || body.hinhAnh };
+    if (!data.image) delete data.image;
+    return this.moviesService.update(Number(body.maPhim), data);
   }
 
   @Delete('XoaPhim')

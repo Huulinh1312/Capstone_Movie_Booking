@@ -31,7 +31,7 @@ model Movie {
   name        String     @db.VarChar(255)
   trailer     String?    @db.VarChar(500)
   description String?    @db.Text
-  image       String?    @db.VarChar(500)
+  image       String?    @db.LongText
   releaseDate DateTime?
   rating      Int        @default(5)
   groupCode   String     @default("GP01") @db.VarChar(20)

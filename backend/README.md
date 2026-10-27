@@ -143,6 +143,18 @@ Seed hiện tạo dữ liệu mẫu idempotent gồm:
 
 Chạy lại lệnh seed không tạo phim, rạp, phòng hoặc lịch chiếu trùng.
 
+### Lưu ý về poster phim trên Render
+
+Poster upload từ Admin được lưu trực tiếp trong database dưới dạng dữ liệu ảnh,
+không phụ thuộc vào thư mục `uploads` tạm của Render. Vì vậy poster không bị mất
+khi service restart hoặc deploy lại. Database cần được đồng bộ schema trước khi
+chạy bản backend mới:
+
+```powershell
+npm run prisma:generate
+npm run db:push
+```
+
 Tài khoản seed:
 
 ```text

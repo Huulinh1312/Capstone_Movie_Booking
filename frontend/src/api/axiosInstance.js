@@ -28,6 +28,7 @@ axiosInstance.interceptors.request.use((config) => {
 
 export function getAssetUrl(path) {
   if (!path) return "";
+  if (/^data:image\//i.test(path)) return path;
   if (/^https?:\/\//i.test(path)) return path;
   const origin = API_BASE_URL.replace(/\/api\/?$/, "");
   return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
