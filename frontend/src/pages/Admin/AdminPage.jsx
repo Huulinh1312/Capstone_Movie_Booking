@@ -56,9 +56,14 @@ export default function AdminPage() {
   const openEditMovie = (movie) => { setMovieForm({ maPhim: movie.id, tenPhim: movie.name || "", maNhom: movie.groupCode || "GP01", trailer: movie.trailer || "", moTa: movie.description || "", ngayKhoiChieu: movie.releaseDate?.slice(0, 10) || "", danhGia: movie.rating || 5 }); setFile(null); setModal("editMovie"); };
   const submitMovie = async (event) => {
     event.preventDefault();
+    const rating = Number(movieForm.danhGia);
+    if (!Number.isInteger(rating) || rating < 0 || rating > 10) {
+      setNotice({ type: "error", text: "Đánh giá phải là số nguyên từ 0 đến 10." });
+      return;
+    }
     try {
       const form = new FormData();
-      Object.entries(movieForm).forEach(([key, value]) => { if (value !== undefined && value !== "") form.append(key, value); });
+      Object.entries({ ...movieForm, danhGia: rating }).forEach(([key, value]) => { if (value !== undefined && value !== "") form.append(key, String(value)); });
       if (file) form.append("file", file);
       if (modal === "editMovie") await movieApi.updateMovieWithImage(form); else await movieApi.addMovieWithImage(form);
       setModal(null); setNotice({ type: "success", text: modal === "editMovie" ? "Đã cập nhật phim." : "Đã thêm phim mới." }); await load();
