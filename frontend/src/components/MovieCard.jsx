@@ -1,62 +1,18 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import { getAssetUrl } from "../api/axiosInstance";
 
-const MovieCard = ({ movie }) => {
-  return (
-    <div className="group relative bg-gradient-to-b from-gray-800 to-gray-950 rounded-2xl overflow-hidden border border-white/10 shadow-xl shadow-black/30 hover:border-red-500/50 hover:shadow-yellow-400/20 hover:-translate-y-2 transition-all duration-300">
-      <div className="relative overflow-hidden">
-        <img
-          src={movie.hinhAnh}
-          alt={movie.tenPhim}
-          className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-500"
-        />
-
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-90" />
-
-        {/* Badges: chỉ render badge nào = true */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2">
-          {movie.hot && (
-            <span className="bg-red-500/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg shadow-red-500/30">
-              HOT
-            </span>
-          )}
-          {movie.dangChieu && (
-            <span className="bg-emerald-500/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg shadow-emerald-500/30">
-              Đang chiếu
-            </span>
-          )}
-          {movie.sapChieu && (
-            <span className="bg-sky-500/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg shadow-sky-500/30">
-              Sắp chiếu
-            </span>
-          )}
-        </div>
-
-        {/* Rating */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-          <span className="text-yellow-400 text-sm">⭐</span>
-          <span className="text-white text-sm font-semibold">
-            {movie.danhGia}
-          </span>
-        </div>
+export default function MovieCard({ movie }) {
+  const status = movie.isShowing ? "Đang chiếu" : movie.isUpcoming ? "Sắp chiếu" : "Đã cập nhật";
+  return <article className="group overflow-hidden rounded-2xl border border-white/10 bg-[#111827] shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-red-400/40">
+    <Link to={`/movies/${movie.id}`} className="block">
+      <div className="relative aspect-[2/3] overflow-hidden bg-[#1b2433]">
+        {movie.image ? <img src={getAssetUrl(movie.image)} alt={movie.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500"><span className="text-4xl">🎬</span><span className="text-[10px] uppercase tracking-widest">No poster</span></div>}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
+        <span className="absolute left-3 top-3 rounded-full bg-red-500/90 px-2.5 py-1 text-[10px] font-black uppercase">{status}</span>
+        <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-2 py-1 text-xs font-bold text-amber-300">★ {movie.rating ?? 0}/10</span>
       </div>
-
-      <div className="p-4">
-        <h3 className="text-white font-bold text-lg mb-1 truncate group-hover:text-red-300 transition-colors">
-          {movie.tenPhim}
-        </h3>
-
-        <p className="text-gray-400 text-sm mb-4">{movie.ngayKhoiChieu}</p>
-
-        <Link
-          to={`/movie/${movie.maPhim}`}
-          className="block text-center bg-red-500 hover:bg-red-400 text-gray-950 font-bold py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40"
-        >
-          Xem chi tiết
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-export default MovieCard;
+      <div className="p-4"><h3 className="truncate font-bold text-white">{movie.name}</h3><p className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-slate-400">{movie.description || "Khám phá thông tin và suất chiếu của bộ phim."}</p></div>
+    </Link>
+    <div className="px-4 pb-4"><Link to={`/movies/${movie.id}`} className="block rounded-xl bg-red-500 py-2.5 text-center text-xs font-black uppercase tracking-wider hover:bg-red-400">Xem suất chiếu</Link></div>
+  </article>;
+}

@@ -24,4 +24,6 @@ export const movieApi = {
     }),
   deleteMovie: (id) =>
     axiosInstance.delete("/QuanLyPhim/XoaPhim", { params: { MaPhim: id } }),
+  deleteMovieAlias: (id) =>
+    axiosInstance.delete("/QuanLyPhim/XP", { params: { MaPhim: id } }),
 };

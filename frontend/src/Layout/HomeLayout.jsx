@@ -1,23 +1,10 @@
-import { Link, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, selectorIsLoggedIn, selectorUser } from "../store/authSlice";
 
 export default function HomeLayout() {
-  const loggedIn = useSelector(selectorIsLoggedIn);
-  const user = useSelector(selectorUser);
-  const dispatch = useDispatch();
-  return <div className="min-h-screen bg-slate-950 text-white">
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/90 backdrop-blur">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
-        <Link to="/" className="text-2xl font-black text-red-500">TLMovie</Link>
-        <div className="flex items-center gap-4 text-sm">
-          <Link to="/movies">Phim</Link><Link to="/cinemas">Rạp & lịch chiếu</Link>
-          {loggedIn && <Link to="/profile">Tài khoản</Link>}
-          {user?.maLoaiNguoiDung === "QuanTri" && <Link className="text-amber-300" to="/admin">Quản trị</Link>}
-          {loggedIn ? <button onClick={() => dispatch(logout())} className="rounded bg-red-600 px-3 py-2">Đăng xuất</button> : <Link className="rounded bg-red-600 px-3 py-2" to="/login">Đăng nhập</Link>}
-        </div>
-      </nav>
-    </header>
-    <Outlet />
-  </div>;
+  const [menuOpen, setMenuOpen] = useState(false); const loggedIn = useSelector(selectorIsLoggedIn); const user = useSelector(selectorUser); const dispatch = useDispatch(); const navigate = useNavigate(); const isAdmin = user?.maLoaiNguoiDung === "QuanTri" || user?.role === "ADMIN";
+  const closeMenu = () => setMenuOpen(false);
+  return <div className="min-h-screen bg-[#070b14] text-white"><header className="sticky top-0 z-40 border-b border-white/10 bg-[#070b14]/90 backdrop-blur-xl"><nav className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-4 sm:px-8"><Link to="/" onClick={closeMenu} className="flex items-center gap-2 text-sm font-black tracking-[.15em]"><span className="h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_14px_#ef4444]" />CINE<span className="text-red-400">VERSE</span></Link><div className="hidden items-center gap-1 rounded-full bg-white/5 p-1 text-xs font-bold md:flex"><Link className="rounded-full px-5 py-2 hover:bg-white/10" to="/">Trang chủ</Link><Link className="rounded-full px-5 py-2 hover:bg-white/10" to="/movies">Phim</Link><Link className="rounded-full px-5 py-2 hover:bg-white/10" to="/cinemas">Rạp chiếu</Link></div><div className="hidden items-center gap-3 text-xs md:flex">{loggedIn ? <><Link to="/profile" className="max-w-32 truncate text-slate-300 hover:text-white">{user?.hoTen || user?.fullName || user?.taiKhoan}</Link>{isAdmin && <Link to="/admin" className="rounded-lg bg-red-500 px-3 py-2 font-black hover:bg-red-400">ADMIN</Link>}<button onClick={() => { dispatch(logout()); navigate("/login"); }} className="text-slate-400 hover:text-red-300">Thoát</button></> : <><Link to="/login" className="text-slate-300 hover:text-white">Đăng nhập</Link><Link to="/register" className="rounded-lg bg-red-500 px-3 py-2 font-bold hover:bg-red-400">Đăng ký</Link></>}</div><button className="rounded-lg bg-white/10 px-3 py-2 text-lg md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Mở menu">☰</button></nav>{menuOpen && <div className="border-t border-white/10 bg-[#111827] px-4 py-4 md:hidden"><div className="mx-auto max-w-7xl space-y-2 text-sm font-semibold"><Link onClick={closeMenu} className="block rounded-lg px-3 py-3 hover:bg-white/10" to="/">Trang chủ</Link><Link onClick={closeMenu} className="block rounded-lg px-3 py-3 hover:bg-white/10" to="/movies">Phim</Link><Link onClick={closeMenu} className="block rounded-lg px-3 py-3 hover:bg-white/10" to="/cinemas">Rạp chiếu</Link>{loggedIn ? <><Link onClick={closeMenu} className="block rounded-lg px-3 py-3 hover:bg-white/10" to="/profile">Hồ sơ</Link>{isAdmin && <Link onClick={closeMenu} className="block rounded-lg px-3 py-3 text-red-300 hover:bg-white/10" to="/admin">Quản trị</Link>}<button onClick={() => { dispatch(logout()); closeMenu(); navigate("/login"); }} className="block px-3 py-3 text-left text-slate-400">Đăng xuất</button></> : <><Link onClick={closeMenu} className="block rounded-lg px-3 py-3" to="/login">Đăng nhập</Link><Link onClick={closeMenu} className="block rounded-lg bg-red-500 px-3 py-3" to="/register">Đăng ký</Link></>}</div></div>}</header><Outlet /><footer className="border-t border-white/10 bg-[#0b0f19] px-4 py-12 sm:px-8"><div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1.4fr_1fr_1fr]"><div><p className="font-black tracking-wider">CINE<span className="text-red-400">VERSE</span></p><p className="mt-3 max-w-sm text-sm leading-6 text-slate-400">Nền tảng đặt vé xem phim trực tuyến với trải nghiệm chọn phim, rạp và ghế liền mạch.</p></div><div><p className="font-bold">Khám phá</p><div className="mt-3 space-y-2 text-sm text-slate-400"><Link className="block hover:text-red-300" to="/movies">Kho phim</Link><Link className="block hover:text-red-300" to="/cinemas">Hệ thống rạp</Link><Link className="block hover:text-red-300" to="/login">Tài khoản</Link></div></div><div><p className="font-bold">Đối tác rạp</p><p className="mt-3 text-sm leading-6 text-slate-400">CGV · Galaxy · Lotte · BHD Star</p></div></div><p className="mx-auto mt-10 max-w-7xl border-t border-white/5 pt-5 text-xs text-slate-500">© 2026 Cineverse Movie Booking</p></footer></div>;
 }

@@ -22,6 +22,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Đăng nhập thành công, trả về data.accessToken' })
   login(@Body() body: LoginDto) { return this.authService.login(body); }
 
+  @Public()
   @Get('LayDanhSachLoaiNguoiDung')
   @ApiOperation({ summary: 'Lấy danh sách loại người dùng' })
   getRoles() {

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { logout } from "../store/authSlice";

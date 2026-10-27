@@ -15,7 +15,7 @@ export const bookingApi = {
       maLichChieu: Number(showtimeId),
       danhSachVe: seats.map((seat) => ({
         maGhe: Number(seat.id),
-        giaVe: Number(seat.price || 0),
+        giaVe: Number(seat.price || seat.giaVe || 90000),
       })),
     }),
 };

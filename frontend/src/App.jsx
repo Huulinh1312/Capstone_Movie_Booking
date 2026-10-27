@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
 import HomeLayout from "./Layout/HomeLayout";
+import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import MovieListPage from "./pages/MovieListPage";
@@ -21,7 +22,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={<HomeLayout />}>
-            <Route index element={<MovieListPage />} />
+            <Route index element={<HomePage />} />
             <Route path="movies" element={<MovieListPage />} />
             <Route path="movies/:id" element={<MovieDetailPage />} />
             <Route path="cinemas" element={<CinemaPage />} />

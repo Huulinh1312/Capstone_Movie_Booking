@@ -18,25 +18,40 @@ async function main() {
     },
   });
 
-  const system = await prisma.cinemaSystem.upsert({
-    where: { code: 'CGV' },
-    update: {},
-    create: { code: 'CGV', name: 'CGV', logo: '' },
-  });
-  const cinema = await prisma.cinema.upsert({
-    where: { code: 'CGV-SG' },
-    update: {},
-    create: {
-      code: 'CGV-SG',
-      name: 'CGV Sư Vạn Hạnh',
-      address: 'TP. Hồ Chí Minh',
-      systemId: system.id,
-    },
-  });
+  const systems = [
+    { code: 'CGV', name: 'CGV Cinemas' },
+    { code: 'GALAXY', name: 'Galaxy Cinema' },
+    { code: 'LOTTE', name: 'Lotte Cinema' },
+    { code: 'BHD', name: 'BHD Star Cineplex' },
+  ];
+  const systemRecords = [];
+  for (const item of systems) {
+    systemRecords.push(await prisma.cinemaSystem.upsert({
+      where: { code: item.code },
+      update: { name: item.name },
+      create: { ...item, logo: '' },
+    }));
+  }
+  const cinemaSeeds = [
+    { code: 'CGV-SG', name: 'CGV Sư Vạn Hạnh', address: 'Tầng 6, Vạn Hạnh Mall, TP. Hồ Chí Minh', systemCode: 'CGV' },
+    { code: 'CGV-LD', name: 'CGV Landmark 81', address: 'Vinhomes Central Park, TP. Hồ Chí Minh', systemCode: 'CGV' },
+    { code: 'GALAXY-NV', name: 'Galaxy Nguyễn Du', address: '116 Nguyễn Du, TP. Hồ Chí Minh', systemCode: 'GALAXY' },
+    { code: 'LOTTE-Q7', name: 'Lotte Cinema Nam Sài Gòn', address: '469 Nguyễn Hữu Thọ, TP. Hồ Chí Minh', systemCode: 'LOTTE' },
+    { code: 'BHD-THD', name: 'BHD Star Thảo Điền', address: 'Vincom Mega Mall Thảo Điền, TP. Hồ Chí Minh', systemCode: 'BHD' },
+  ];
+  const cinemaRecords = [];
+  for (const item of cinemaSeeds) {
+    const system = systemRecords.find((record) => record.code === item.systemCode);
+    cinemaRecords.push(await prisma.cinema.upsert({
+      where: { code: item.code },
+      update: { name: item.name, address: item.address, systemId: system.id },
+      create: { code: item.code, name: item.name, address: item.address, systemId: system.id },
+    }));
+  }
   const room = await prisma.room.upsert({
     where: { code: 'CGV-SG-01' },
     update: {},
-    create: { code: 'CGV-SG-01', name: 'Phòng 01', cinemaId: cinema.id },
+    create: { code: 'CGV-SG-01', name: 'Phòng IMAX 01', cinemaId: cinemaRecords[0].id },
   });
 
   const seatCount = await prisma.seat.count({ where: { roomId: room.id } });
@@ -55,19 +70,22 @@ async function main() {
     });
   }
 
-  let movie = await prisma.movie.findFirst({ where: { name: 'Demo Movie' } });
-  if (!movie) {
-    movie = await prisma.movie.create({
-      data: {
-        name: 'Demo Movie',
-        description: 'Phim mẫu để kiểm thử API.',
-        rating: 5,
-        groupCode: 'GP01',
-        isShowing: true,
-        releaseDate: new Date(),
-      },
-    });
+  const movieSeeds = [
+    { name: 'Dune: Hành Tinh Cát 2', description: 'Paul Atreides tiếp tục hành trình bảo vệ gia đình và hành tinh Arrakis.', rating: 9, isShowing: true, isHot: true },
+    { name: 'Mai', description: 'Một câu chuyện tình cảm giàu cảm xúc giữa những lựa chọn và cơ hội thứ hai.', rating: 8, isShowing: true, isHot: true },
+    { name: 'Godzilla x Kong: Đế Chế Mới', description: 'Hai biểu tượng quái vật cùng đối mặt với một mối đe dọa khổng lồ.', rating: 8, isShowing: true, isHot: false },
+    { name: 'Kung Fu Panda 4', description: 'Po trở lại với chuyến phiêu lưu hài hước và đầy cảm hứng.', rating: 8, isShowing: true, isHot: false },
+    { name: 'Deadpool & Wolverine', description: 'Một cuộc hội ngộ không thể đoán trước của hai nhân vật nổi tiếng.', rating: 9, isShowing: false, isHot: false },
+    { name: 'Furiosa: Câu Chuyện Từ Mad Max', description: 'Hành trình sinh tồn dữ dội trong thế giới hậu tận thế.', rating: 8, isShowing: false, isHot: false },
+  ];
+  const movieRecords = [];
+  for (const item of movieSeeds) {
+    const existing = await prisma.movie.findFirst({ where: { name: item.name } });
+    movieRecords.push(existing
+      ? await prisma.movie.update({ where: { id: existing.id }, data: item })
+      : await prisma.movie.create({ data: { ...item, groupCode: 'GP01', releaseDate: new Date() } }));
   }
+  const movie = movieRecords[0];
 
   const showtimeCount = await prisma.showtime.count({ where: { movieId: movie.id, roomId: room.id } });
   if (showtimeCount === 0) {

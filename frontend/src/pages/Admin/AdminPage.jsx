@@ -1,77 +1,95 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { cinemaApi } from "../../api/cinemaApi";
+import { getAssetUrl } from "../../api/axiosInstance";
 import { movieApi } from "../../api/movieApi";
 import { showtimesApi } from "../../api/showtimesApi";
 import { userApi } from "../../api/userApi";
-import { cinemaApi } from "../../api/cinemaApi";
+import Modal from "../../components/Modal";
 
 const emptyMovie = { tenPhim: "", maNhom: "GP01", trailer: "", moTa: "", ngayKhoiChieu: "", danhGia: 5 };
+const emptyUser = { taiKhoan: "", matKhau: "123456", email: "", soDt: "", hoTen: "", maLoaiNguoiDung: "KhachHang" };
+const emptyShowtime = { maPhim: "", maRap: "CGV-SG-01", ngayChieuGioChieu: "", giaVe: 90000 };
+const unwrap = (response) => { const data = response?.data ?? response; return Array.isArray(data) ? data : data ? [data] : []; };
+
+function ActionButton({ children, onClick, tone = "neutral", type = "button" }) {
+  return <button type={type} onClick={onClick} className={`rounded-lg px-3 py-2 text-xs font-bold ${tone === "danger" ? "bg-red-500/15 text-red-300 hover:bg-red-500 hover:text-white" : tone === "primary" ? "bg-red-500 text-white hover:bg-red-400" : "bg-white/10 text-slate-200 hover:bg-white/20"}`}>{children}</button>;
+}
 
 export default function AdminPage() {
+  const [tab, setTab] = useState("movies");
   const [movies, setMovies] = useState([]);
   const [users, setUsers] = useState([]);
   const [systems, setSystems] = useState([]);
-  const [movie, setMovie] = useState(emptyMovie);
-  const [showtime, setShowtime] = useState({ maPhim: "", maRap: "", ngayChieuGioChieu: "", giaVe: 90000 });
+  const [movieForm, setMovieForm] = useState(emptyMovie);
+  const [userForm, setUserForm] = useState(emptyUser);
+  const [showtimeForm, setShowtimeForm] = useState(emptyShowtime);
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState("");
+  const [modal, setModal] = useState(null);
+  const [query, setQuery] = useState("");
+  const [notice, setNotice] = useState({ type: "", text: "" });
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [movieResponse, userResponse, cinemaResponse] = await Promise.all([
-      movieApi.getMovieList(), userApi.getList(), cinemaApi.getHeThongRap(),
-    ]);
-    setMovies(Array.isArray(movieResponse.data) ? movieResponse.data : []);
-    setUsers(Array.isArray(userResponse.data) ? userResponse.data : userResponse.data?.items || []);
-    setSystems(Array.isArray(cinemaResponse.data) ? cinemaResponse.data : [cinemaResponse.data].filter(Boolean));
+    setLoading(true);
+    try {
+      const results = await Promise.allSettled([movieApi.getMovieList(), userApi.getList(), cinemaApi.getHeThongRap()]);
+      if (results[0].status === "fulfilled") setMovies(unwrap(results[0].value));
+      if (results[1].status === "fulfilled") setUsers(unwrap(results[1].value));
+      if (results[2].status === "fulfilled") setSystems(unwrap(results[2].value));
+    } catch { setNotice({ type: "error", text: "Không tải được dữ liệu quản trị." }); } finally { setLoading(false); }
   };
-  useEffect(() => { load().catch((error) => setMessage(error.response?.data?.message || "Không tải được dữ liệu quản trị")); }, []);
+  useEffect(() => { // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, []);
+  useEffect(() => { if (!notice.text) return undefined; const timer = setTimeout(() => setNotice({ type: "", text: "" }), 3500); return () => clearTimeout(timer); }, [notice]);
 
-  const addMovie = async (event) => {
+  const filteredMovies = useMemo(() => movies.filter((movie) => movie.name?.toLowerCase().includes(query.toLowerCase())), [movies, query]);
+  const openAddMovie = () => { setMovieForm(emptyMovie); setFile(null); setModal("addMovie"); };
+  const openEditMovie = (movie) => { setMovieForm({ maPhim: movie.id, tenPhim: movie.name || "", maNhom: movie.groupCode || "GP01", trailer: movie.trailer || "", moTa: movie.description || "", ngayKhoiChieu: movie.releaseDate?.slice(0, 10) || "", danhGia: movie.rating || 5 }); setFile(null); setModal("editMovie"); };
+  const submitMovie = async (event) => {
     event.preventDefault();
-    const form = new FormData();
-    Object.entries(movie).forEach(([key, value]) => form.append(key, value));
-    if (file) form.append("file", file);
-    await movieApi.addMovieWithImage(form);
-    setMessage("Đã thêm phim");
-    setMovie(emptyMovie); setFile(null); await load();
+    try {
+      const form = new FormData();
+      Object.entries(movieForm).forEach(([key, value]) => { if (value !== undefined && value !== "") form.append(key, value); });
+      if (file) form.append("file", file);
+      if (modal === "editMovie") await movieApi.updateMovieWithImage(form); else await movieApi.addMovieWithImage(form);
+      setModal(null); setNotice({ type: "success", text: modal === "editMovie" ? "Đã cập nhật phim." : "Đã thêm phim mới." }); await load();
+    } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể lưu phim." }); }
   };
-
-  const deleteMovie = async (id) => {
-    if (!window.confirm("Xóa phim này?")) return;
-    await movieApi.deleteMovie(id); setMessage("Đã xóa phim"); await load();
+  const removeMovie = async (movie) => {
+    if (!window.confirm(`Xóa phim "${movie.name}"?`)) return;
+    try { await movieApi.deleteMovie(movie.id); setNotice({ type: "success", text: "Đã xóa phim." }); await load(); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể xóa phim." }); }
   };
-
-  const addShowtime = async (event) => {
+  const submitUser = async (event) => {
     event.preventDefault();
-    await showtimesApi.createShowtime({ ...showtime, maPhim: Number(showtime.maPhim), giaVe: Number(showtime.giaVe) });
-    setMessage("Đã tạo lịch chiếu");
+    try { if (modal === "addUser") await userApi.add(userForm); else await userApi.update(userForm); setModal(null); setNotice({ type: "success", text: modal === "addUser" ? "Đã thêm người dùng." : "Đã cập nhật người dùng." }); await load(); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể lưu người dùng." }); }
+  };
+  const removeUser = async (user) => {
+    if (!window.confirm(`Xóa tài khoản "${user.account}"?`)) return;
+    try { await userApi.remove(user.account); setNotice({ type: "success", text: "Đã xóa người dùng." }); await load(); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể xóa người dùng." }); }
+  };
+  const submitShowtime = async (event) => {
+    event.preventDefault();
+    try { await showtimesApi.createShowtime({ ...showtimeForm, maPhim: Number(showtimeForm.maPhim), giaVe: Number(showtimeForm.giaVe), ngayChieuGioChieu: new Date(showtimeForm.ngayChieuGioChieu).toISOString() }); setModal(null); setNotice({ type: "success", text: "Đã tạo lịch chiếu." }); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể tạo lịch chiếu." }); }
   };
 
-  return <main className="min-h-screen bg-slate-950 text-white px-4 py-10">
-    <div className="mx-auto max-w-7xl space-y-8">
-      <h1 className="text-3xl font-bold text-red-400">Quản trị Movie Booking</h1>
-      {message && <p className="rounded-lg bg-emerald-500/15 p-3 text-emerald-300">{message}</p>}
-      <section className="grid gap-6 lg:grid-cols-2">
-        <form onSubmit={addMovie} className="space-y-3 rounded-2xl bg-slate-900 p-5">
-          <h2 className="text-xl font-semibold">Thêm phim + upload hình</h2>
-          <input required placeholder="Tên phim" value={movie.tenPhim} onChange={(e) => setMovie({ ...movie, tenPhim: e.target.value })} />
-          <input placeholder="Trailer URL" value={movie.trailer} onChange={(e) => setMovie({ ...movie, trailer: e.target.value })} />
-          <textarea placeholder="Mô tả" value={movie.moTa} onChange={(e) => setMovie({ ...movie, moTa: e.target.value })} />
-          <input type="date" value={movie.ngayKhoiChieu} onChange={(e) => setMovie({ ...movie, ngayKhoiChieu: e.target.value })} />
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-          <button className="rounded-lg bg-red-600 px-4 py-2">Thêm phim</button>
-        </form>
-        <form onSubmit={addShowtime} className="space-y-3 rounded-2xl bg-slate-900 p-5">
-          <h2 className="text-xl font-semibold">Tạo lịch chiếu</h2>
-          <select required value={showtime.maPhim} onChange={(e) => setShowtime({ ...showtime, maPhim: e.target.value })}><option value="">Chọn phim</option>{movies.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
-          <input required placeholder="Mã phòng, ví dụ CGV-SG-01" value={showtime.maRap} onChange={(e) => setShowtime({ ...showtime, maRap: e.target.value })} />
-          <input required type="datetime-local" value={showtime.ngayChieuGioChieu} onChange={(e) => setShowtime({ ...showtime, ngayChieuGioChieu: new Date(e.target.value).toISOString() })} />
-          <input required type="number" value={showtime.giaVe} onChange={(e) => setShowtime({ ...showtime, giaVe: e.target.value })} />
-          <button className="rounded-lg bg-amber-500 px-4 py-2 text-black">Tạo lịch chiếu</button>
-        </form>
-      </section>
-      <section className="rounded-2xl bg-slate-900 p-5"><h2 className="mb-4 text-xl font-semibold">Phim ({movies.length})</h2><div className="grid gap-3 md:grid-cols-2">{movies.map((item) => <div className="flex items-center justify-between rounded-lg bg-slate-800 p-3" key={item.id}><span>{item.name}</span><button className="text-red-300" onClick={() => deleteMovie(item.id)}>Xóa</button></div>)}</div></section>
-      <section className="rounded-2xl bg-slate-900 p-5"><h2 className="mb-4 text-xl font-semibold">Người dùng ({users.length})</h2><div className="grid gap-2 md:grid-cols-2">{users.map((item) => <div className="rounded-lg bg-slate-800 p-3" key={item.id || item.account}>{item.fullName || item.hoTen} · {item.account || item.taiKhoan}</div>)}</div></section>
-      <section className="rounded-2xl bg-slate-900 p-5"><h2 className="mb-4 text-xl font-semibold">Rạp và phòng</h2>{systems.map((system) => <div key={system.id} className="mb-3"><b>{system.name}</b>{system.cinemas?.map((cinema) => <p className="text-slate-300" key={cinema.id}>{cinema.name}: {cinema.rooms?.map((room) => room.code).join(", ")}</p>)}</div>)}</section>
+  const formInput = (label, key, type = "text", form = movieForm, setForm = setMovieForm) => <label className="block text-xs font-semibold text-slate-300">{label}<input required={key === "tenPhim"} type={type} value={form[key] || ""} onChange={(event) => setForm({ ...form, [key]: event.target.value })} className="mt-2" /></label>;
+
+  return <main className="min-h-screen bg-[#070b14] px-4 py-8 text-white sm:px-8">
+    <div className="mx-auto max-w-7xl">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><Link to="/" className="text-xs text-slate-400 hover:text-white">← Về trang khách</Link><p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-red-300">Quản trị / Admin Portal</p><h1 className="mt-2 text-3xl font-black">Tổng quan Movie Booking</h1><p className="mt-2 text-sm text-slate-400">Quản lý nội dung phim, người dùng và lịch chiếu.</p></div><div className="flex gap-2"><ActionButton onClick={() => setModal("showtime")} tone="neutral">＋ Tạo lịch chiếu</ActionButton><ActionButton onClick={openAddMovie} tone="primary">＋ Thêm phim mới</ActionButton></div></div>
+      {notice.text && <div className={`mb-5 rounded-xl border p-4 text-sm ${notice.type === "error" ? "border-red-400/20 bg-red-500/10 text-red-200" : "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"}`}>{notice.text}</div>}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-2xl border border-white/10 bg-[#111827] p-5"><p className="text-xs text-slate-400">Tổng số phim</p><p className="mt-2 text-3xl font-black">{movies.length}</p></div><div className="rounded-2xl border border-white/10 bg-[#111827] p-5"><p className="text-xs text-slate-400">Tổng người dùng</p><p className="mt-2 text-3xl font-black">{users.length}</p></div><div className="rounded-2xl border border-white/10 bg-[#111827] p-5"><p className="text-xs text-slate-400">Hệ thống rạp</p><p className="mt-2 text-3xl font-black text-amber-300">{systems.length}</p></div><div className="rounded-2xl border border-white/10 bg-[#111827] p-5"><p className="text-xs text-slate-400">Trạng thái API</p><p className="mt-2 text-xl font-black text-emerald-300">● Online</p></div></div>
+      <div className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-[#111827] p-2"><button onClick={() => setTab("movies")} className={`rounded-xl px-5 py-3 text-sm font-bold ${tab === "movies" ? "bg-red-500" : "text-slate-400 hover:bg-white/10"}`}>🎬 Quản lý phim</button><button onClick={() => setTab("users")} className={`rounded-xl px-5 py-3 text-sm font-bold ${tab === "users" ? "bg-red-500" : "text-slate-400 hover:bg-white/10"}`}>👥 Người dùng</button><button onClick={() => setTab("cinemas")} className={`rounded-xl px-5 py-3 text-sm font-bold ${tab === "cinemas" ? "bg-red-500" : "text-slate-400 hover:bg-white/10"}`}>🏢 Rạp & phòng</button></div>
+      {loading ? <div className="rounded-2xl bg-[#111827] p-10 text-center text-slate-400">Đang tải dữ liệu quản trị...</div> : <>
+        {tab === "movies" && <section className="rounded-2xl border border-white/10 bg-[#111827] p-5"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">Danh sách phim</h2><p className="mt-1 text-sm text-slate-400">Hình ảnh phim được cập nhật bằng form quản trị.</p></div><input className="max-w-xs" placeholder="Tìm tên phim..." value={query} onChange={(event) => setQuery(event.target.value)} /></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{filteredMovies.map((movie) => <article key={movie.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0b0f19]"><div className="aspect-[2/3] bg-slate-800">{movie.image ? <img className="h-full w-full object-cover" src={getAssetUrl(movie.image)} alt={movie.name} /> : <div className="flex h-full items-center justify-center text-xs text-slate-500">Chưa có poster</div>}</div><div className="p-4"><h3 className="truncate font-bold">{movie.name}</h3><p className="mt-1 text-xs text-amber-300">★ {movie.rating}/10 · {movie.isShowing ? "Đang chiếu" : "Sắp chiếu"}</p><div className="mt-4 flex gap-2"><ActionButton onClick={() => openEditMovie(movie)}>Sửa</ActionButton><ActionButton tone="danger" onClick={() => removeMovie(movie)}>Xóa</ActionButton></div></div></article>)}</div></section>}
+        {tab === "users" && <section className="rounded-2xl border border-white/10 bg-[#111827] p-5"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-black">Danh sách người dùng</h2><p className="mt-1 text-sm text-slate-400">Thêm, sửa và xóa tài khoản bằng popup.</p></div><ActionButton onClick={() => { setUserForm(emptyUser); setModal("addUser"); }} tone="primary">＋ Thêm người dùng</ActionButton></div><div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm"><thead className="border-b border-white/10 text-xs uppercase text-slate-500"><tr><th className="p-3">Tài khoản</th><th className="p-3">Họ tên</th><th className="p-3">Email</th><th className="p-3">Quyền</th><th className="p-3">Thao tác</th></tr></thead><tbody>{users.map((user) => <tr key={user.id || user.account} className="border-b border-white/5"><td className="p-3 font-semibold">{user.account || user.taiKhoan}</td><td className="p-3">{user.fullName || user.hoTen}</td><td className="p-3 text-slate-400">{user.email}</td><td className="p-3 text-amber-300">{user.role === "ADMIN" ? "QuanTri" : "KhachHang"}</td><td className="flex gap-2 p-3"><ActionButton onClick={() => { setUserForm({ taiKhoan: user.account, matKhau: "", email: user.email, soDt: user.phone || "", hoTen: user.fullName, maLoaiNguoiDung: user.role === "ADMIN" ? "QuanTri" : "KhachHang" }); setModal("editUser"); }}>Sửa</ActionButton><ActionButton tone="danger" onClick={() => removeUser(user)}>Xóa</ActionButton></td></tr>)}</tbody></table></div></section>}
+        {tab === "cinemas" && <section className="rounded-2xl border border-white/10 bg-[#111827] p-5"><h2 className="text-xl font-black">Danh sách hệ thống rạp</h2><p className="mt-1 text-sm text-slate-400">Danh sách được lấy từ backend và dùng để tạo lịch chiếu.</p><div className="mt-5 grid gap-4 md:grid-cols-2">{systems.map((system) => <article key={system.id || system.code} className="rounded-xl border border-white/10 bg-[#0b0f19] p-5"><h3 className="text-lg font-bold">{system.name}</h3>{system.cinemas?.map((cinema) => <div key={cinema.id} className="mt-4 border-t border-white/10 pt-3"><p className="font-semibold">{cinema.name}</p><p className="text-sm text-slate-400">{cinema.address}</p><div className="mt-2 flex flex-wrap gap-2">{cinema.rooms?.map((room) => <span key={room.id} className="rounded bg-white/10 px-2 py-1 text-xs text-slate-300">{room.code}</span>)}</div></div>)}</article>)}</div></section>}
+      </>}
     </div>
+    {modal === "addMovie" || modal === "editMovie" ? <Modal wide title={modal === "editMovie" ? "Chỉnh sửa phim" : "Thêm phim mới"} onClose={() => setModal(null)}><form onSubmit={submitMovie} className="grid gap-4 sm:grid-cols-2">{formInput("Tên phim", "tenPhim")} {formInput("Trailer URL", "trailer")} {formInput("Ngày khởi chiếu", "ngayKhoiChieu", "date")} {formInput("Đánh giá", "danhGia", "number")}<label className="block text-xs font-semibold text-slate-300 sm:col-span-2">Mô tả<textarea value={movieForm.moTa} onChange={(event) => setMovieForm({ ...movieForm, moTa: event.target.value })} className="mt-2 min-h-28" /></label><label className="block text-xs font-semibold text-slate-300 sm:col-span-2">Poster phim<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] || null)} className="mt-2" /></label><div className="flex justify-end gap-2 sm:col-span-2"><ActionButton onClick={() => setModal(null)}>Hủy</ActionButton><ActionButton type="submit" tone="primary">{modal === "editMovie" ? "Lưu thay đổi" : "Thêm phim"}</ActionButton></div></form></Modal> : null}
+    {modal === "addUser" || modal === "editUser" ? <Modal title={modal === "editUser" ? "Chỉnh sửa người dùng" : "Thêm người dùng"} onClose={() => setModal(null)}><form onSubmit={submitUser} className="space-y-4">{formInput("Tài khoản", "taiKhoan", "text", userForm, setUserForm)} {modal === "addUser" && formInput("Mật khẩu", "matKhau", "password", userForm, setUserForm)} {formInput("Họ tên", "hoTen", "text", userForm, setUserForm)} {formInput("Email", "email", "email", userForm, setUserForm)} {formInput("Số điện thoại", "soDt", "text", userForm, setUserForm)}<label className="block text-xs font-semibold text-slate-300">Quyền<select value={userForm.maLoaiNguoiDung} onChange={(event) => setUserForm({ ...userForm, maLoaiNguoiDung: event.target.value })} className="mt-2"><option value="KhachHang">Khách hàng</option><option value="QuanTri">Quản trị</option></select></label><div className="flex justify-end gap-2"><ActionButton onClick={() => setModal(null)}>Hủy</ActionButton><ActionButton type="submit" tone="primary">Lưu</ActionButton></div></form></Modal> : null}
+    {modal === "showtime" ? <Modal title="Tạo lịch chiếu mới" onClose={() => setModal(null)}><form onSubmit={submitShowtime} className="space-y-4"><label className="block text-xs font-semibold text-slate-300">Phim<select required value={showtimeForm.maPhim} onChange={(event) => setShowtimeForm({ ...showtimeForm, maPhim: event.target.value })} className="mt-2"><option value="">Chọn phim</option>{movies.map((movie) => <option key={movie.id} value={movie.id}>{movie.name}</option>)}</select></label>{formInput("Mã phòng", "maRap", "text", showtimeForm, setShowtimeForm)}{formInput("Thời gian chiếu", "ngayChieuGioChieu", "datetime-local", showtimeForm, setShowtimeForm)}{formInput("Giá vé", "giaVe", "number", showtimeForm, setShowtimeForm)}<div className="flex justify-end gap-2"><ActionButton onClick={() => setModal(null)}>Hủy</ActionButton><ActionButton type="submit" tone="primary">Tạo lịch chiếu</ActionButton></div></form></Modal> : null}
   </main>;
 }

@@ -82,7 +82,7 @@ const bookingSlice = createSlice({
         const arr = raw ? JSON.parse(raw) : [];
         arr.unshift(ticket);
         localStorage.setItem(key, JSON.stringify(arr));
-      } catch (err) {
+      } catch {
         // ignore localStorage errors
       }
 
