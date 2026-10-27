@@ -134,6 +134,15 @@ Seed dữ liệu mẫu:
 npm run db:seed
 ```
 
+Seed hiện tạo dữ liệu mẫu idempotent gồm:
+
+- 10 phim mẫu không kèm poster để bạn upload sau trong Admin.
+- 4 hệ thống rạp: CGV, Galaxy, Lotte và BHD Star.
+- 8 cụm rạp, 16 phòng chiếu và 60 ghế mỗi phòng.
+- Nhiều lịch chiếu với giá vé thường và Premium.
+
+Chạy lại lệnh seed không tạo phim, rạp, phòng hoặc lịch chiếu trùng.
+
 Tài khoản seed:
 
 ```text
