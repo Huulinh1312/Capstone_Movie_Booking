@@ -180,13 +180,12 @@ async function main() {
     const existing = await prisma.movie.findFirst({ where: { name: item.name } });
     const data = {
       ...item,
-      image: null,
       groupCode: 'GP01',
       releaseDate: item.isUpcoming ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) : new Date(),
     };
     movies.push(existing
       ? await prisma.movie.update({ where: { id: existing.id }, data })
-      : await prisma.movie.create({ data }));
+      : await prisma.movie.create({ data: { ...data, image: null } }));
   }
 
   for (const [movieIndex, movie] of movies.entries()) {

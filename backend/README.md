@@ -141,7 +141,8 @@ Seed hiện tạo dữ liệu mẫu idempotent gồm:
 - 8 cụm rạp, 16 phòng chiếu và 60 ghế mỗi phòng.
 - Nhiều lịch chiếu với giá vé thường và Premium.
 
-Chạy lại lệnh seed không tạo phim, rạp, phòng hoặc lịch chiếu trùng.
+Chạy lại lệnh seed không tạo phim, rạp, phòng hoặc lịch chiếu trùng và không
+ghi đè poster đã upload của các phim tồn tại.
 
 ### Lưu ý về poster phim trên Render
 
