@@ -5,7 +5,7 @@ import { getAssetUrl } from "../../api/axiosInstance";
 import { movieApi } from "../../api/movieApi";
 import { showtimesApi } from "../../api/showtimesApi";
 import { userApi } from "../../api/userApi";
-import Modal from "../../components/Modal";
+import Modal, { ConfirmDialog } from "../../components/Modal";
 
 const emptyMovie = { tenPhim: "", maNhom: "GP01", trailer: "", moTa: "", ngayKhoiChieu: "", danhGia: 5 };
 const emptyUser = { taiKhoan: "", matKhau: "123456", email: "", soDt: "", hoTen: "", maLoaiNguoiDung: "KhachHang" };
@@ -29,6 +29,13 @@ export default function AdminPage() {
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(true);
+  const [confirm, setConfirm] = useState(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+
+  const errorMessage = (error, fallback) => {
+    const message = error.response?.data?.message;
+    return Array.isArray(message) ? message.join(" · ") : message || fallback;
+  };
 
   const load = async () => {
     setLoading(true);
@@ -55,26 +62,40 @@ export default function AdminPage() {
       if (file) form.append("file", file);
       if (modal === "editMovie") await movieApi.updateMovieWithImage(form); else await movieApi.addMovieWithImage(form);
       setModal(null); setNotice({ type: "success", text: modal === "editMovie" ? "Đã cập nhật phim." : "Đã thêm phim mới." }); await load();
-    } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể lưu phim." }); }
+    } catch (error) { setNotice({ type: "error", text: errorMessage(error, "Không thể lưu phim.") }); }
   };
   const removeMovie = async (movie) => {
-    if (!window.confirm(`Xóa phim "${movie.name}"?`)) return;
-    try { await movieApi.deleteMovie(movie.id); setNotice({ type: "success", text: "Đã xóa phim." }); await load(); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể xóa phim." }); }
+    setConfirm({ kind: "movie", movie });
   };
   const submitUser = async (event) => {
     event.preventDefault();
-    try { if (modal === "addUser") await userApi.add(userForm); else await userApi.update(userForm); setModal(null); setNotice({ type: "success", text: modal === "addUser" ? "Đã thêm người dùng." : "Đã cập nhật người dùng." }); await load(); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể lưu người dùng." }); }
+    const payload = { ...userForm };
+    if (!payload.matKhau) delete payload.matKhau;
+    try { if (modal === "addUser") await userApi.add(payload); else await userApi.update(payload); setModal(null); setNotice({ type: "success", text: modal === "addUser" ? "Đã thêm người dùng." : "Đã cập nhật người dùng." }); await load(); } catch (error) { setNotice({ type: "error", text: errorMessage(error, "Không thể lưu người dùng.") }); }
   };
   const removeUser = async (user) => {
-    if (!window.confirm(`Xóa tài khoản "${user.account}"?`)) return;
-    try { await userApi.remove(user.account); setNotice({ type: "success", text: "Đã xóa người dùng." }); await load(); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể xóa người dùng." }); }
+    if (user.role === "ADMIN") { setNotice({ type: "error", text: "Không thể xóa tài khoản quản trị." }); return; }
+    setConfirm({ kind: "user", user });
+  };
+  const confirmDelete = async () => {
+    setConfirmBusy(true);
+    try {
+      if (confirm.kind === "movie") await movieApi.deleteMovie(confirm.movie.id);
+      else await userApi.remove(confirm.user.account || confirm.user.taiKhoan);
+      setConfirm(null);
+      setNotice({ type: "success", text: confirm.kind === "movie" ? "Đã xóa phim thành công." : "Đã xóa người dùng thành công." });
+      await load();
+    } catch (error) {
+      setConfirm(null);
+      setNotice({ type: "error", text: errorMessage(error, "Thao tác không thể thực hiện.") });
+    } finally { setConfirmBusy(false); }
   };
   const submitShowtime = async (event) => {
     event.preventDefault();
     try { await showtimesApi.createShowtime({ ...showtimeForm, maPhim: Number(showtimeForm.maPhim), giaVe: Number(showtimeForm.giaVe), ngayChieuGioChieu: new Date(showtimeForm.ngayChieuGioChieu).toISOString() }); setModal(null); setNotice({ type: "success", text: "Đã tạo lịch chiếu." }); } catch (error) { setNotice({ type: "error", text: error.response?.data?.message || "Không thể tạo lịch chiếu." }); }
   };
 
-  const formInput = (label, key, type = "text", form = movieForm, setForm = setMovieForm) => <label className="block text-xs font-semibold text-slate-300">{label}<input required={key === "tenPhim"} type={type} value={form[key] || ""} onChange={(event) => setForm({ ...form, [key]: event.target.value })} className="mt-2" /></label>;
+  const formInput = (label, key, type = "text", form = movieForm, setForm = setMovieForm) => <label className="block text-xs font-semibold text-slate-300">{label}<input required={["tenPhim", "taiKhoan", "email", "hoTen"].includes(key)} type={type} value={form[key] || ""} onChange={(event) => setForm({ ...form, [key]: event.target.value })} className="mt-2" /></label>;
 
   return <main className="min-h-screen bg-[#070b14] px-4 py-8 text-white sm:px-8">
     <div className="mx-auto max-w-7xl">
@@ -88,6 +109,7 @@ export default function AdminPage() {
         {tab === "cinemas" && <section className="rounded-2xl border border-white/10 bg-[#111827] p-5"><h2 className="text-xl font-black">Danh sách hệ thống rạp</h2><p className="mt-1 text-sm text-slate-400">Danh sách được lấy từ backend và dùng để tạo lịch chiếu.</p><div className="mt-5 grid gap-4 md:grid-cols-2">{systems.map((system) => <article key={system.id || system.code} className="rounded-xl border border-white/10 bg-[#0b0f19] p-5"><h3 className="text-lg font-bold">{system.name}</h3>{system.cinemas?.map((cinema) => <div key={cinema.id} className="mt-4 border-t border-white/10 pt-3"><p className="font-semibold">{cinema.name}</p><p className="text-sm text-slate-400">{cinema.address}</p><div className="mt-2 flex flex-wrap gap-2">{cinema.rooms?.map((room) => <span key={room.id} className="rounded bg-white/10 px-2 py-1 text-xs text-slate-300">{room.code}</span>)}</div></div>)}</article>)}</div></section>}
       </>}
     </div>
+    {confirm && <ConfirmDialog title={confirm.kind === "movie" ? "Xóa phim này?" : "Xóa tài khoản này?"} message={confirm.kind === "movie" ? `Bạn sắp xóa "${confirm.movie.name}". Hành động này không thể hoàn tác.` : `Bạn sắp xóa tài khoản "${confirm.user.account || confirm.user.taiKhoan}". Dữ liệu đặt vé liên quan cũng sẽ được xử lý.`} confirmLabel="Xóa ngay" onConfirm={confirmDelete} onClose={() => setConfirm(null)} busy={confirmBusy} />}
     {modal === "addMovie" || modal === "editMovie" ? <Modal wide title={modal === "editMovie" ? "Chỉnh sửa phim" : "Thêm phim mới"} onClose={() => setModal(null)}><form onSubmit={submitMovie} className="grid gap-4 sm:grid-cols-2">{formInput("Tên phim", "tenPhim")} {formInput("Trailer URL", "trailer")} {formInput("Ngày khởi chiếu", "ngayKhoiChieu", "date")} {formInput("Đánh giá", "danhGia", "number")}<label className="block text-xs font-semibold text-slate-300 sm:col-span-2">Mô tả<textarea value={movieForm.moTa} onChange={(event) => setMovieForm({ ...movieForm, moTa: event.target.value })} className="mt-2 min-h-28" /></label><label className="block text-xs font-semibold text-slate-300 sm:col-span-2">Poster phim<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] || null)} className="mt-2" /></label><div className="flex justify-end gap-2 sm:col-span-2"><ActionButton onClick={() => setModal(null)}>Hủy</ActionButton><ActionButton type="submit" tone="primary">{modal === "editMovie" ? "Lưu thay đổi" : "Thêm phim"}</ActionButton></div></form></Modal> : null}
     {modal === "addUser" || modal === "editUser" ? <Modal title={modal === "editUser" ? "Chỉnh sửa người dùng" : "Thêm người dùng"} onClose={() => setModal(null)}><form onSubmit={submitUser} className="space-y-4">{formInput("Tài khoản", "taiKhoan", "text", userForm, setUserForm)} {modal === "addUser" && formInput("Mật khẩu", "matKhau", "password", userForm, setUserForm)} {formInput("Họ tên", "hoTen", "text", userForm, setUserForm)} {formInput("Email", "email", "email", userForm, setUserForm)} {formInput("Số điện thoại", "soDt", "text", userForm, setUserForm)}<label className="block text-xs font-semibold text-slate-300">Quyền<select value={userForm.maLoaiNguoiDung} onChange={(event) => setUserForm({ ...userForm, maLoaiNguoiDung: event.target.value })} className="mt-2"><option value="KhachHang">Khách hàng</option><option value="QuanTri">Quản trị</option></select></label><div className="flex justify-end gap-2"><ActionButton onClick={() => setModal(null)}>Hủy</ActionButton><ActionButton type="submit" tone="primary">Lưu</ActionButton></div></form></Modal> : null}
     {modal === "showtime" ? <Modal title="Tạo lịch chiếu mới" onClose={() => setModal(null)}><form onSubmit={submitShowtime} className="space-y-4"><label className="block text-xs font-semibold text-slate-300">Phim<select required value={showtimeForm.maPhim} onChange={(event) => setShowtimeForm({ ...showtimeForm, maPhim: event.target.value })} className="mt-2"><option value="">Chọn phim</option>{movies.map((movie) => <option key={movie.id} value={movie.id}>{movie.name}</option>)}</select></label>{formInput("Mã phòng", "maRap", "text", showtimeForm, setShowtimeForm)}{formInput("Thời gian chiếu", "ngayChieuGioChieu", "datetime-local", showtimeForm, setShowtimeForm)}{formInput("Giá vé", "giaVe", "number", showtimeForm, setShowtimeForm)}<div className="flex justify-end gap-2"><ActionButton onClick={() => setModal(null)}>Hủy</ActionButton><ActionButton type="submit" tone="primary">Tạo lịch chiếu</ActionButton></div></form></Modal> : null}

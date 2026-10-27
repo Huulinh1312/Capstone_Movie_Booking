@@ -23,10 +23,30 @@ export class UsersService {
     return this.safe(user);
   }
   async update(body: UpdateUserDto) {
+    const current = await this.prisma.user.findUnique({ where: { account: body.taiKhoan } });
+    if (!current) throw new NotFoundException('Không tìm thấy người dùng');
+    if (body.email && body.email !== current.email) {
+      const emailOwner = await this.prisma.user.findUnique({ where: { email: body.email } });
+      if (emailOwner && emailOwner.id !== current.id) throw new ConflictException('Email đã được sử dụng');
+    }
     const data: { email?: string; fullName?: string; phone?: string; groupCode?: string; passwordHash?: string; role?: 'ADMIN' | 'USER' } = { email: body.email, fullName: body.hoTen, phone: body.soDt, groupCode: body.maNhom || 'GP01' };
     if (body.matKhau) data.passwordHash = await bcrypt.hash(body.matKhau, 10);
     if (body.maLoaiNguoiDung) data.role = body.maLoaiNguoiDung === 'QuanTri' ? 'ADMIN' : 'USER';
     return this.safe(await this.prisma.user.update({ where: { account: body.taiKhoan }, data }));
   }
-  async remove(account: string) { await this.prisma.user.delete({ where: { account } }); return { message: 'Xóa người dùng thành công' }; }
+  async remove(account: string) {
+    const user = await this.prisma.user.findUnique({ where: { account }, select: { id: true, role: true } });
+    if (!user) throw new NotFoundException('Không tìm thấy người dùng');
+    if (user.role === 'ADMIN') throw new ConflictException('Không thể xóa tài khoản quản trị');
+    await this.prisma.$transaction(async (transaction) => {
+      const bookings = await transaction.booking.findMany({ where: { userId: user.id }, select: { id: true } });
+      const bookingIds = bookings.map((booking) => booking.id);
+      if (bookingIds.length) {
+        await transaction.bookingSeat.deleteMany({ where: { bookingId: { in: bookingIds } } });
+        await transaction.booking.deleteMany({ where: { id: { in: bookingIds } } });
+      }
+      await transaction.user.delete({ where: { id: user.id } });
+    });
+    return { message: 'Xóa người dùng thành công' };
+  }
 }

@@ -1,4 +1,5 @@
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateMovieDto {
   @IsString() tenPhim!: string;
@@ -7,5 +8,5 @@ export class CreateMovieDto {
   @IsString() @IsOptional() moTa?: string;
   @IsString() @IsOptional() hinhAnh?: string;
   @IsString() @IsOptional() ngayKhoiChieu?: string;
-  @IsInt() @Min(0) @Max(10) @IsOptional() danhGia?: number;
+  @Type(() => Number) @IsInt() @Min(0) @Max(10) @IsOptional() danhGia?: number;
 }
