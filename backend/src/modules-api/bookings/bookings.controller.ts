@@ -51,6 +51,13 @@ export class BookingsController {
     return { message: 'Đã xóa vé khỏi lịch sử đặt vé' };
   }
 
+  @Post('XoaLichSuDatVe')
+  @ApiBearerAuth('bearerAuth')
+  @ApiOperation({ summary: 'Xóa một vé khỏi lịch sử bằng POST tương thích client' })
+  async deleteBookingHistoryPost(@CurrentUser() user: { id: number }, @Query('bookingId', ParseIntPipe) bookingId: number) {
+    return this.deleteBookingHistory(user, bookingId);
+  }
+
   @Post('DatVe')
   @ApiBearerAuth('bearerAuth')
   @ApiOperation({ summary: 'Đặt vé xem phim' })
