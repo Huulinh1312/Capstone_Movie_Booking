@@ -22,6 +22,25 @@ export class BookingsController {
     return { thongTinPhim: showtime.movie, danhSachGhe: showtime.room.seats.map((seat) => ({ ...seat, daDat: booked.has(seat.id) })) };
   }
 
+  @Get('LayLichSuDatVe')
+  @ApiBearerAuth('bearerAuth')
+  @ApiOperation({ summary: 'Lấy lịch sử đặt vé của tài khoản hiện tại' })
+  async getBookingHistory(@CurrentUser() user: { id: number }) {
+    return this.prisma.booking.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        showtime: {
+          include: {
+            movie: true,
+            room: { include: { cinema: true } },
+          },
+        },
+        seats: { include: { seat: true } },
+      },
+    });
+  }
+
   @Post('DatVe')
   @ApiBearerAuth('bearerAuth')
   @ApiOperation({ summary: 'Đặt vé xem phim' })

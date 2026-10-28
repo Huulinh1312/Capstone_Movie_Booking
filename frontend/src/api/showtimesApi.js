@@ -6,6 +6,7 @@ export const showtimesApi = {
 };
 
 export const bookingApi = {
+  getHistory: () => axiosInstance.get("/QuanLyDatVe/LayLichSuDatVe"),
   getSeats: (showtimeId) =>
     axiosInstance.get("/QuanLyDatVe/LayDanhSachPhongVe", {
       params: { MaLichChieu: showtimeId },

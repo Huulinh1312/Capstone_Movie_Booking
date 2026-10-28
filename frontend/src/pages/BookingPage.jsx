@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { bookingApi } from "../api/showtimesApi";
 import { selectorIsLoggedIn } from "../store/authSlice";
+import ToastMessage from "../components/ToastMessage";
 
 const money = (value) => `${Number(value || 0).toLocaleString("vi-VN")}đ`;
 
@@ -13,8 +14,18 @@ export default function BookingPage() {
   const [room, setRoom] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [message, setMessage] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [toast, setToast] = useState({ visible: false, type: "success", message: "" });
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!toast.visible) return undefined;
+    const timer = window.setTimeout(() => setToast((current) => ({ ...current, visible: false })), 3000);
+    return () => window.clearTimeout(timer);
+  }, [toast.visible]);
+
+  const showToast = (type, toastMessage) => {
+    setToast({ visible: true, type, message: toastMessage });
+  };
 
   const loadSeats = async () => {
     try {
@@ -45,13 +56,13 @@ export default function BookingPage() {
 
   const submit = async () => {
     if (!loggedIn) { navigate("/login"); return; }
-    if (!selectedSeats.length) { setMessage("Vui lòng chọn ít nhất một ghế."); return; }
+    if (!selectedSeats.length) { showToast("error", "Vui lòng chọn ít nhất một ghế."); return; }
     try {
       setSubmitting(true); setMessage("");
       await bookingApi.book(showtimeId, selectedSeats.map((seat) => ({ ...seat, price: ticketPrice })));
-      setSuccess(true); setSelectedIds([]); await loadSeats();
+      setSelectedIds([]); showToast("success", "Đặt vé thành công! Ghế của bạn đã được xác nhận."); await loadSeats();
     } catch (error) {
-      setMessage(error.response?.status === 409 ? "Ghế vừa được người khác đặt. Vui lòng tải lại sơ đồ ghế." : error.response?.data?.message || "Đặt vé thất bại.");
+      showToast("error", error.response?.status === 409 ? "Ghế vừa được người khác đặt. Vui lòng tải lại sơ đồ ghế." : error.response?.data?.message || "Đặt vé thất bại.");
       if (error.response?.status === 409) await loadSeats();
     } finally { setSubmitting(false); }
   };
@@ -59,13 +70,13 @@ export default function BookingPage() {
   if (!room) return <main className="relative flex min-h-[75vh] items-center justify-center overflow-hidden bg-[#070b14] px-4 text-slate-400"><div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url('/bg-booking.png')" }} /><div className="relative rounded-2xl border border-white/10 bg-[#111827]/90 p-8 text-center shadow-2xl">{message || "Đang tải sơ đồ ghế..."}</div></main>;
 
   return <main className="min-h-screen bg-[#070b14] px-4 py-8 text-white sm:px-8">
+    <ToastMessage visible={toast.visible} type={toast.type} message={toast.message} />
     <div className="mx-auto max-w-7xl">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
         <div><p className="text-xs font-bold uppercase tracking-[.2em] text-amber-400">Cineverse / Seat selection</p><h1 className="mt-2 text-2xl font-black sm:text-3xl">{room.thongTinPhim?.name || "Chọn ghế của bạn"}</h1><p className="mt-2 text-sm text-slate-400">Lịch chiếu #{showtimeId} · Chọn ghế trống để tiếp tục</p></div>
         <div className="rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-right"><p className="text-xs text-slate-400">Tổng thanh toán</p><p className="text-xl font-black text-amber-300">{money(total)}</p></div>
       </div>
       {message && <p className="mb-5 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-200">{message}</p>}
-      {success && <div className="mb-5 flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-200"><span>Đặt vé thành công! Ghế của bạn đã được xác nhận.</span><button onClick={() => setSuccess(false)} className="text-emerald-300">Đóng</button></div>}
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <section className="rounded-2xl border border-white/10 bg-[#111827] p-5 sm:p-8">
           <div className="mx-auto mb-10 max-w-2xl text-center"><div className="h-2 rounded-full bg-gradient-to-r from-transparent via-red-400 to-transparent shadow-[0_0_20px_#ef4444]" /><p className="mt-3 text-[11px] font-bold uppercase tracking-[.3em] text-slate-400">Màn hình / Screen</p><p className="mt-1 text-[10px] text-slate-600">Phía trước phòng chiếu</p></div>
