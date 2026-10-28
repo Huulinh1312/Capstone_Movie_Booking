@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ConflictException, Controller, Get, NotFoundException, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Delete, Get, NotFoundException, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { PrismaService } from '../../modules-system/prisma/prisma.service';
@@ -39,6 +39,16 @@ export class BookingsController {
         seats: { include: { seat: true } },
       },
     });
+  }
+
+  @Delete('XoaLichSuDatVe')
+  @ApiBearerAuth('bearerAuth')
+  @ApiOperation({ summary: 'Xóa một vé khỏi lịch sử đặt vé của tài khoản hiện tại' })
+  async deleteBookingHistory(@CurrentUser() user: { id: number }, @Query('bookingId', ParseIntPipe) bookingId: number) {
+    const booking = await this.prisma.booking.findFirst({ where: { id: bookingId, userId: user.id }, select: { id: true } });
+    if (!booking) throw new NotFoundException('Không tìm thấy vé trong lịch sử');
+    await this.prisma.booking.delete({ where: { id: booking.id } });
+    return { message: 'Đã xóa vé khỏi lịch sử đặt vé' };
   }
 
   @Post('DatVe')

@@ -2,6 +2,8 @@ import axiosInstance from "./axiosInstance";
 
 export const userApi = {
   getProfile: () => axiosInstance.post("/QuanLyNguoiDung/ThongTinTaiKhoan"),
+  updateProfile: (payload) =>
+    axiosInstance.put("/QuanLyNguoiDung/CapNhatThongTinCaNhan", payload),
   getList: (groupCode = "GP01") =>
     axiosInstance.get("/QuanLyNguoiDung/LayDanhSachNguoiDung", {
       params: { MaNhom: groupCode },

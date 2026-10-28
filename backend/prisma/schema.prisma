@@ -19,6 +19,7 @@ model User {
   email        String        @unique @db.VarChar(255)
   fullName     String        @db.VarChar(100)
   phone        String?       @db.VarChar(20)
+  avatar       String?       @db.LongText
   groupCode    String        @default("GP01") @db.VarChar(20)
   role         UserRole      @default(USER)
   bookings     Booking[]

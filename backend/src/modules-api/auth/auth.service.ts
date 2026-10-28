@@ -20,6 +20,6 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { account: body.taiKhoan } });
     if (!user || !(await bcrypt.compare(body.matKhau, user.passwordHash))) throw new UnauthorizedException('Tài khoản hoặc mật khẩu không đúng');
     const accessToken = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'development-secret', { expiresIn: '7d' });
-    return { taiKhoan: user.account, email: user.email, hoTen: user.fullName, maLoaiNguoiDung: user.role === 'ADMIN' ? 'QuanTri' : 'KhachHang', accessToken };
+    return { taiKhoan: user.account, email: user.email, hoTen: user.fullName, avatar: user.avatar, maLoaiNguoiDung: user.role === 'ADMIN' ? 'QuanTri' : 'KhachHang', accessToken };
   }
 }

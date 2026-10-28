@@ -5,6 +5,7 @@ import { UsersService } from './users.service';
 import { Role } from '../../common/decorators/role.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('QuanLyNguoiDung')
 @ApiTags('QuanLyNguoiDung')
@@ -32,7 +33,10 @@ export class UsersController {
   searchPage(@Query('tuKhoa') keyword = '', @Query('soTrang') page = '1', @Query('soPhanTuTrenTrang') size = '10') { return this.usersService.paginate(keyword, Number(page), Number(size)); }
   @Post('ThongTinTaiKhoan')
   @ApiBearerAuth('bearerAuth') @ApiOperation({ summary: 'Lấy thông tin tài khoản hiện tại' })
-  profile(@CurrentUser() user: unknown) { return user; }
+  profile(@CurrentUser() user: { passwordHash: string; [key: string]: unknown }) { return this.usersService.profile(user); }
+  @Put('CapNhatThongTinCaNhan')
+  @ApiBearerAuth('bearerAuth') @ApiOperation({ summary: 'Cập nhật thông tin và ảnh đại diện tài khoản hiện tại' })
+  updateProfile(@CurrentUser() user: { id: number }, @Body() body: UpdateProfileDto) { return this.usersService.updateProfile(user.id, body); }
   @Post('LayThongTinNguoiDung')
   @Role('ADMIN')
   @ApiBearerAuth('bearerAuth') @ApiOperation({ summary: 'Lấy thông tin người dùng theo tài khoản' })
