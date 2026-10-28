@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { authApi } from "../api/authApi";
 import { login } from "../store/authSlice";
 
 export default function LoginPage() {
+  const location = useLocation();
   const [form, setForm] = useState({ taiKhoan: "", matKhau: "" });
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => new URLSearchParams(location.search).get("session") === "expired" ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." : "");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();

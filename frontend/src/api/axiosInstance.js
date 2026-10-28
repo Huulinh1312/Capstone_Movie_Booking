@@ -26,6 +26,22 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
+    const isAuthRequest = requestUrl.includes("/DangNhap") || requestUrl.includes("/DangKy");
+    if (status === 401 && !isAuthRequest) {
+      localStorage.removeItem("user");
+      if (window.location.pathname !== "/login") {
+        window.location.assign("/login?session=expired");
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 export function getAssetUrl(path) {
   if (!path) return "";
   if (/^data:image\//i.test(path)) return path;
