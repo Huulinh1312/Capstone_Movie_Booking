@@ -8,7 +8,8 @@
     { "key": "baseUrl", "value": "http://localhost:3069/api" },
     { "key": "accessToken", "value": "" },
     { "key": "movieId", "value": "1" },
-    { "key": "showtimeId", "value": "1" }
+    { "key": "showtimeId", "value": "1" },
+    { "key": "bookingId", "value": "1" }
   ],
   "item": [
     {
@@ -31,6 +32,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\"taiKhoan\":\"admin\",\"matKhau\":\"123456\"}" },
             "url": "{{baseUrl}}/QuanLyNguoiDung/DangNhap"
+          }
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/QuanLyNguoiDung/ThongTinTaiKhoan"
           }
         }
       ]
@@ -63,6 +72,34 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\"maLichChieu\":{{showtimeId}},\"danhSachVe\":[{\"maGhe\":1},{\"maGhe\":2}]}" },
             "url": "{{baseUrl}}/QuanLyDatVe/DatVe"
+          }
+        },
+        {
+          "name": "Booking history",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/QuanLyDatVe/LayLichSuDatVe"
+          }
+        },
+        {
+          "name": "Delete booking history",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/QuanLyDatVe/XoaLichSuDatVe?bookingId={{bookingId}}"
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"hoTen\":\"Demo User\",\"email\":\"demo@example.com\",\"soDt\":\"0900000000\"}" },
+            "url": "{{baseUrl}}/QuanLyNguoiDung/CapNhatThongTinCaNhan"
           }
         }
       ]

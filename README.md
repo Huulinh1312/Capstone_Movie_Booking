@@ -3,10 +3,6 @@
 Website đặt vé xem phim được xây dựng cho dự án cuối khóa Node.js.
 Ứng dụng gồm frontend React và backend NestJS, kết nối cơ sở dữ liệu MySQL.
 
-## Người thực hiện
-
-Đây là dự án cá nhân do **Nguyễn Hữu Linh** thực hiện. Vì dự án chỉ có một thành viên nên không có phân chia task giữa các thành viên; tiến độ được theo dõi bằng bảng task cá nhân và Trello/Excel.
-
 ## Demo
 
 - Frontend: <https://capstone-movie-booking.vercel.app>
@@ -22,8 +18,6 @@ Website đặt vé xem phim được xây dựng cho dự án cuối khóa Node.
 - Xem rạp, phòng chiếu và lịch chiếu.
 - Chọn ghế và đặt vé.
 - Xem thông tin tài khoản.
-- Cập nhật hồ sơ và ảnh đại diện.
-- Xem và xóa lịch sử đặt vé của tài khoản.
 
 ### Quản trị viên
 
@@ -133,6 +127,8 @@ npm run build
 
 cd ..\backend
 npm run build
+
+npm test
 ```
 
 ## Deploy
@@ -160,6 +156,7 @@ VITE_API_URL=https://capstone-movie-booking.onrender.com/api
 - [README Frontend](./frontend/README.md)
 - [README Backend](./backend/README.md)
 - [Postman Collection](./backend/postman/Movie-Booking-API.postman_collection.json)
+- [Postman Test Report](./backend/postman/POSTMAN-TEST-REPORT.md)
 - [Project Tasks](./backend/project-tasks.csv)
 
 ## Lưu ý bảo mật

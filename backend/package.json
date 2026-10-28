@@ -8,6 +8,8 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
+    "test": "node --test test/**/*.test.cjs",
+    "test:integration": "set RUN_INTEGRATION=1&& node --test test/**/*.test.cjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "db:push": "prisma db push",
