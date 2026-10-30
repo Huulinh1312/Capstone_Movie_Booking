@@ -19,6 +19,10 @@ const cinemaSeeds = [
   { code: 'LOTTE-NSG', name: 'Lotte Cinema Nam Sài Gòn', address: '469 Nguyễn Hữu Thọ, TP. Hồ Chí Minh', systemCode: 'LOTTE' },
   { code: 'LOTTE-GV', name: 'Lotte Cinema Gò Vấp', address: '242 Nguyễn Văn Lượng, TP. Hồ Chí Minh', systemCode: 'LOTTE' },
   { code: 'BHD-THD', name: 'BHD Star Thảo Điền', address: 'Vincom Mega Mall Thảo Điền, TP. Hồ Chí Minh', systemCode: 'BHD' },
+  { code: 'CGV-CT', name: 'CGV Aeon Mall Tân Phú', address: '30 Bờ Bao Tân Thắng, TP. Hồ Chí Minh', systemCode: 'CGV' },
+  { code: 'GALAXY-Q9', name: 'Galaxy Sala', address: 'Tầng 2, Thiso Mall Sala, TP. Hồ Chí Minh', systemCode: 'GALAXY' },
+  { code: 'LOTTE-TB', name: 'Lotte Cinema Tây Bắc', address: 'Khu đô thị Celadon City, TP. Hồ Chí Minh', systemCode: 'LOTTE' },
+  { code: 'BHD-CC', name: 'BHD Star Cineplex Bitexco', address: 'Tầng 3, Bitexco Financial Tower, TP. Hồ Chí Minh', systemCode: 'BHD' },
 ];
 
 const movieSeeds = [
@@ -83,6 +87,70 @@ const movieSeeds = [
     name: 'Vùng Đất Linh Hồn',
     description: 'Một chuyến phiêu lưu kỳ ảo mở ra thế giới của lòng can đảm, tình thân và sự trưởng thành.',
     rating: 8,
+    isUpcoming: true,
+  },
+  {
+    name: 'Chị Chị Em Em 3',
+    description: 'Tác phẩm tâm lý drama Việt Nam xoay quanh những bí mật, lựa chọn và mối quan hệ đầy giằng co.',
+    rating: 8,
+    isHot: true,
+    isShowing: true,
+  },
+  {
+    name: 'Trại Buôn Người',
+    description: 'Phim hành động hồi hộp xoay quanh cuộc truy đuổi đường dây buôn người và hành trình giải cứu nạn nhân.',
+    rating: 8,
+    isHot: true,
+    isShowing: true,
+  },
+  {
+    name: 'Clayface',
+    description: 'Một câu chuyện kinh dị khoa học viễn tưởng về nhân vật có khả năng biến đổi và nỗi ám ảnh không thể kiểm soát.',
+    rating: 8,
+    isShowing: true,
+  },
+  {
+    name: 'Quỷ Ăn Tạng 4: Hổ Tinh',
+    description: 'Cuộc đối đầu hành động kinh dị với lời nguyền về hổ tinh và những thế lực siêu nhiên đáng sợ.',
+    rating: 8,
+    isShowing: true,
+  },
+  {
+    name: 'Cõi Nguyền',
+    description: 'Một lời nguyền cổ xưa kéo cả gia đình vào chuỗi sự kiện bí ẩn và kinh hoàng.',
+    rating: 7,
+    isShowing: true,
+  },
+  {
+    name: 'Bambi: Lãnh Địa Săn Mồi',
+    description: 'Bambi trở lại trong một câu chuyện kinh dị sinh tồn giữa khu rừng bị con người biến thành lãnh địa săn mồi.',
+    rating: 7,
+    isShowing: true,
+  },
+  {
+    name: 'Gia Đình x Điệp Viên Mã: Trắng',
+    description: 'Gia đình Forger bước vào nhiệm vụ mới đầy hài hước, hành động và những tình huống bất ngờ.',
+    rating: 8,
+    isHot: true,
+    isShowing: true,
+  },
+  {
+    name: 'Avatar: Lửa Và Tro Tàn',
+    description: 'Hành trình mới trên Pandora mở ra cuộc xung đột giữa các bộ tộc và sức mạnh của thiên nhiên.',
+    rating: 9,
+    isUpcoming: true,
+  },
+  {
+    name: 'Thám Tử Kiên: Kỳ Án Không Đầu',
+    description: 'Vụ án bí ẩn tại một thị trấn ven sông thử thách khả năng suy luận của vị thám tử tài ba.',
+    rating: 8,
+    isHot: true,
+    isShowing: true,
+  },
+  {
+    name: 'Mật Mã Bóng Đêm',
+    description: 'Một nhóm chuyên gia phải giải mã tín hiệu bí ẩn trước khi thành phố rơi vào thảm họa.',
+    rating: 7,
     isUpcoming: true,
   },
 ];
