@@ -5,6 +5,7 @@ Website đặt vé xem phim được xây dựng cho dự án cuối khóa Node.
 
 ## Demo
 
+- Trello: [https://trello.com/b/wOiLcNzt/capstone-movie-booking-nodejs-%F0%9F%8E%AC]
 - Frontend: <https://capstone-movie-booking.vercel.app>
 - Backend API: <https://capstone-movie-booking.onrender.com/api>
 - Swagger: <https://capstone-movie-booking.onrender.com/api/docs>

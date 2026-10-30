@@ -43,3 +43,25 @@ the `accessToken` collection variable from the login response.
 
 This file is the expected-result report. Add the Postman Run export or screenshots
 after executing the collection against the final production deployment.
+
+## Production execution result
+
+- Environment: Production
+- Base URL: https://capstone-movie-booking.onrender.com/api
+- Execution date: 30/10/2026
+- Total requests: 18
+- Passed: 18
+- Failed: 0
+
+| Test case | Expected | Actual | Result |
+|---|---:|---:|---|
+| Login admin | 200 | 200 | PASS |
+| List movies | 200 | 200 | PASS |
+| Get seats | 200 | 200 | PASS |
+| Book seats | 200 | 200 | PASS |
+| Duplicate seat | 409 | 409 | PASS |
+| No token | 401 | 401 | PASS |
+| User calls admin API | 403 | 403 | PASS |
+| Booking history | 200 | 200 | PASS |
+| Delete booking history | 200 | 200 | PASS |
+| Update profile | 200 | 200 | PASS |
